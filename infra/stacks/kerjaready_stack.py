@@ -4,6 +4,7 @@ from aws_cdk import (
     Stack,
     Duration,
     CfnOutput,
+    triggers,
     aws_ec2 as ec2,
     aws_rds as rds,
     aws_s3 as s3,
@@ -86,6 +87,13 @@ class KerjaReadyStack(Stack):
                 group_name=group,
             )
 
+        # Shared settings for every Lambda that uses the Data API
+        data_api_environment = {
+            "CLUSTER_ARN": self.cluster.cluster_arn,
+            "SECRET_ARN": self.cluster.secret.secret_arn,
+            "DATABASE_NAME": DATABASE_NAME,
+        }
+
         # Lambda: health check through the Data API
         check_health_function = _lambda.Function(
             self,
@@ -96,11 +104,7 @@ class KerjaReadyStack(Stack):
             code=_lambda.Code.from_asset(str(FUNCTIONS_DIR / "check-health")),
             timeout=Duration.seconds(25),
             memory_size=256,
-            environment={
-                "CLUSTER_ARN": self.cluster.cluster_arn,
-                "SECRET_ARN": self.cluster.secret.secret_arn,
-                "DATABASE_NAME": DATABASE_NAME,
-            }
+            environment=data_api_environment,
         )
         self.cluster.grant_data_api_access(check_health_function)
 
@@ -112,6 +116,29 @@ class KerjaReadyStack(Stack):
             integration=apigwv2_integrations.HttpLambdaIntegration(
                 "CheckHealthIntegration", check_health_function
             ),
+        )
+
+        # Lambda: Apply SQL migrations through the Data API
+        run_database_migration_function = _lambda.Function(
+            self,
+            "RunDatabaseMigrationFunction",
+            function_name = "kerjaready-run-database-migration",
+            runtime = _lambda.Runtime.PYTHON_3_12,
+            handler = "run_database_migration.handler",
+            code = _lambda.Code.from_asset(str(FUNCTIONS_DIR / "run-database-migration")),
+            timeout = Duration.minutes(4),
+            memory_size = 256,
+            environment = data_api_environment,
+        )
+        self.cluster.grant_data_api_access(run_database_migration_function)
+
+        # Trigger: run the migration during deploy, after the cluster exists
+        triggers.Trigger(
+            self,
+            "RunDatabaseMigrationTrigger",
+            handler = run_database_migration_function,
+            timeout = Duration.minutes(5),
+            execute_after=[self.cluster],
         )
 
         # Outputs used by later components and the frontend
