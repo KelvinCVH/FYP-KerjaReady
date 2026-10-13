@@ -1,0 +1,169 @@
+- generic [ref=f7e3]:
+  - link "Skip to Content" [ref=f7e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f7e5]:
+    - generic [ref=f7e6]:
+      - link "KerjaReady" [ref=f7e7] [cursor=pointer]:
+        - /url: /
+        - generic [aria-hidden] [ref=f7e8]: K
+      - navigation "Main" [ref=f7e10]:
+        - list [ref=f7e11]:
+          - listitem [ref=f7e12]:
+            - link "How It Works" [ref=f7e13] [cursor=pointer]:
+              - /url: "#how-it-works"
+          - listitem [ref=f7e14]:
+            - link "For Students" [ref=f7e15] [cursor=pointer]:
+              - /url: "#for-students"
+          - listitem [ref=f7e16]:
+            - link "For Recruiters" [ref=f7e17] [cursor=pointer]:
+              - /url: "#for-recruiters"
+      - generic [ref=f7e18]:
+        - link "Sign In" [ref=f7e19] [cursor=pointer]:
+          - /url: /sign-in
+        - link "Create Account" [ref=f7e20] [cursor=pointer]:
+          - /url: /register
+  - main [ref=f7e21]:
+    - region [ref=f7e22]:
+      - generic [ref=f7e23]:
+        - generic [ref=f7e24]:
+          - heading "Know Where Your Resume Stands" [level=1] [ref=f7e25]
+          - paragraph [ref=f7e26]: Compare your resume with Malaysian tech job postings, see which skills are evidenced, and get a roadmap for the rest.
+          - generic [ref=f7e27]:
+            - link "Assess My Resume" [ref=f7e28] [cursor=pointer]:
+              - /url: /register?role=candidate
+            - link "Find Candidates" [ref=f7e29] [cursor=pointer]:
+              - /url: /register?role=recruiter
+        - figure "Example result" [ref=f7e30]:
+          - generic [ref=f7e32]:
+            - generic [ref=f7e33]:
+              - generic [ref=f7e34]:
+                - paragraph [ref=f7e35]: Target role
+                - paragraph [ref=f7e36]: Data Analyst
+              - generic [ref=f7e37]:
+                - paragraph [ref=f7e38]: 4 of 6
+                - paragraph [ref=f7e39]: skills evidenced
+            - list [ref=f7e40]:
+              - listitem [ref=f7e41]:
+                - generic [ref=f7e42]:
+                  - generic [ref=f7e43]: SQL
+                  - generic [ref=f7e44]: Evidenced
+                - blockquote [ref=f7e45]: “Wrote SQL queries to clean and join 50,000 sales records for a monthly report.”
+              - listitem [ref=f7e46]:
+                - generic [ref=f7e47]:
+                  - generic [ref=f7e48]: Python
+                  - generic [ref=f7e49]: Evidenced
+              - listitem [ref=f7e50]:
+                - generic [ref=f7e51]:
+                  - generic [ref=f7e52]: Data Visualisation
+                  - generic [ref=f7e53]: Evidenced
+              - listitem [ref=f7e54]:
+                - generic [ref=f7e55]:
+                  - generic [ref=f7e56]: Excel
+                  - generic [ref=f7e57]: Evidenced
+              - listitem [ref=f7e58]:
+                - generic [ref=f7e59]:
+                  - generic [ref=f7e60]: Power BI
+                  - generic [ref=f7e61]: Not evidenced
+              - listitem [ref=f7e62]:
+                - generic [ref=f7e63]:
+                  - generic [ref=f7e64]: Statistics
+                  - generic [ref=f7e65]: Not evidenced
+            - paragraph [ref=f7e67]: "Next on your roadmap: Power BI"
+    - region [ref=f7e70]:
+      - generic [ref=f7e71]:
+        - heading "How It Works" [level=2] [ref=f7e72]
+        - paragraph [ref=f7e73]: From your first upload to a clear plan in three steps.
+        - list [ref=f7e74]:
+          - listitem [ref=f7e75]:
+            - heading "Upload" [level=3] [ref=f7e80]
+            - paragraph [ref=f7e81]: Upload your resume. KerjaReady reads the text and finds the skills it shows.
+          - listitem [ref=f7e82]:
+            - heading "Assess" [level=3] [ref=f7e87]
+            - paragraph [ref=f7e88]: Choose a target role and see which of its required skills are evidenced in your resume.
+          - listitem [ref=f7e89]:
+            - heading "Improve" [level=3] [ref=f7e94]
+            - paragraph [ref=f7e95]: Get recommendations tied to lines in your resume and a learning roadmap for the rest.
+    - generic [ref=f7e97]:
+      - region [ref=f7e98]:
+        - heading "For Students" [level=2] [ref=f7e99]
+        - paragraph [ref=f7e100]: Understand how your resume reads for the role you want, then work on what is not yet evidenced.
+        - list [ref=f7e101]:
+          - listitem [ref=f7e102]: Role-aligned resume assessment
+          - listitem [ref=f7e105]: Skill gap analysis against Malaysian job postings
+          - listitem [ref=f7e108]: Resume recommendations tied to your own words
+          - listitem [ref=f7e111]: A learning roadmap and job matches with a match score
+        - figure "Example roadmap for Data Analyst" [ref=f7e114]:
+          - list [ref=f7e116]:
+            - listitem [ref=f7e117]:
+              - generic [aria-hidden] [ref=f7e118]: "1"
+              - generic [ref=f7e119]:
+                - paragraph [ref=f7e120]: Power BI
+                - paragraph [ref=f7e121]: Build one dashboard from a public dataset and add it to your resume.
+            - listitem [ref=f7e122]:
+              - generic [aria-hidden] [ref=f7e123]: "2"
+              - generic [ref=f7e124]:
+                - paragraph [ref=f7e125]: Statistics
+                - paragraph [ref=f7e126]: Practise hypothesis testing in a small analysis project.
+        - link "Assess My Resume" [ref=f7e128] [cursor=pointer]:
+          - /url: /register?role=candidate
+      - region [ref=f7e129]:
+        - heading "For Recruiters" [level=2] [ref=f7e130]
+        - paragraph [ref=f7e131]: Post roles and review applicants with candidate insights that show how each resume aligns with your listing.
+        - list [ref=f7e132]:
+          - listitem [ref=f7e133]: Post and manage job listings
+          - listitem [ref=f7e136]: A match score for every applicant
+          - listitem [ref=f7e139]: Resume evidence for each required skill
+          - listitem [ref=f7e142]: Accept or reject with a reason the candidate can see
+        - table [ref=f7e146]:
+          - caption [ref=f7e147]: Example applicants for Junior Data Analyst
+          - rowgroup [ref=f7e148]:
+            - row [ref=f7e149]:
+              - columnheader "Name" [ref=f7e150]
+              - columnheader "Match score" [ref=f7e151]
+              - columnheader "Status" [ref=f7e152]
+          - rowgroup [ref=f7e153]:
+            - row [ref=f7e154]:
+              - rowheader "Nurul Aina binti Razak" [ref=f7e155]
+              - cell "82.4" [ref=f7e156]
+              - cell "Submitted" [ref=f7e157]
+            - row [ref=f7e159]:
+              - rowheader "Lim Wei Jie" [ref=f7e160]
+              - cell "76.9" [ref=f7e161]
+              - cell "Accepted" [ref=f7e162]
+            - row [ref=f7e164]:
+              - rowheader "Arjun Ramasamy" [ref=f7e165]
+              - cell "68.3" [ref=f7e166]
+              - cell "Submitted" [ref=f7e167]
+        - paragraph [ref=f7e169]: Match scores are supporting signals, not a measure of a candidate’s ability.
+        - link "Find Candidates" [ref=f7e171] [cursor=pointer]:
+          - /url: /register?role=recruiter
+    - region [ref=f7e172]:
+      - generic [ref=f7e173]:
+        - generic [ref=f7e174]:
+          - heading "Built to Be Fair and Private" [level=2] [ref=f7e175]
+          - paragraph [ref=f7e176]: KerjaReady handles personal data and career decisions, so it works within clear limits.
+        - list [ref=f7e177]:
+          - listitem [ref=f7e178]:
+            - generic [ref=f7e183]:
+              - heading "Private by Default" [level=3] [ref=f7e184]
+              - paragraph [ref=f7e185]: Recruiters see your resume only after you apply to their listing.
+          - listitem [ref=f7e186]:
+            - generic [ref=f7e191]:
+              - heading "Grounded in Local Data" [level=3] [ref=f7e192]
+              - paragraph [ref=f7e193]: Role requirements are drawn from Malaysian technology job postings.
+          - listitem [ref=f7e194]:
+            - generic [ref=f7e198]:
+              - heading "Signals, Not Verdicts" [level=3] [ref=f7e199]
+              - paragraph [ref=f7e200]: Results show what your resume evidences. They support decisions and do not judge a person’s ability.
+  - contentinfo [ref=f7e201]:
+    - generic [ref=f7e202]:
+      - paragraph [ref=f7e203]: KerjaReady
+      - paragraph [ref=f7e204]: © 2026 KerjaReady
+    - navigation "Footer" [ref=f7e205]:
+      - list [ref=f7e206]:
+        - listitem [ref=f7e207]:
+          - link "Privacy Notice" [ref=f7e208] [cursor=pointer]:
+            - /url: /privacy
+        - listitem [ref=f7e209]:
+          - link "Sign In" [ref=f7e210] [cursor=pointer]:
+            - /url: /sign-in
