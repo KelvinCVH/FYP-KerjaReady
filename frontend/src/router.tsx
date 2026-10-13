@@ -5,6 +5,8 @@ import type { NavItem } from "./layouts/SidebarLayout";
 import LandingPage from "./pages/public/LandingPage";
 import SignInPage from "./pages/public/SignInPage";
 import RegisterPage from "./pages/public/RegisterPage";
+import AccountDetailsPage from "./pages/public/AccountDetailsPage";
+import VerifyEmailPage from "./pages/public/VerifyEmailPage";
 import NotFoundPage from "./pages/public/NotFoundPage";
 import PrivacyNoticePage from "./pages/public/PrivacyNoticePage";
 
@@ -41,6 +43,15 @@ export const router = createBrowserRouter([
   { path: "/", element: <LandingPage /> },
   { path: "/sign-in", element: <SignInPage /> },
   { path: "/register", element: <RegisterPage /> },
+  {
+    path: "/register/candidate",
+    element: <AccountDetailsPage key="candidate" accountType="candidate" />,
+  },
+  {
+    path: "/register/recruiter",
+    element: <AccountDetailsPage key="recruiter" accountType="recruiter" />,
+  },
+  { path: "/register/verify", element: <VerifyEmailPage /> },
   { path: "/privacy", element: <PrivacyNoticePage /> },
   {
     path: "/candidate",

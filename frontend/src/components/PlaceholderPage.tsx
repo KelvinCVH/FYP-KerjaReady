@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 type PlaceholderPageProps = {
   title: string;
@@ -7,6 +8,8 @@ type PlaceholderPageProps = {
 };
 
 export default function PlaceholderPage({ title, description, children }: PlaceholderPageProps) {
+  usePageTitle(`${title} | KerjaReady`);
+
   return (
     <section>
       <h1 className="text-2xl font-semibold">{title}</h1>

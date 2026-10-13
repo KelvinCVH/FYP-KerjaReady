@@ -4,8 +4,11 @@ import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingHeader from "@/components/landing/LandingHeader";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function LandingPage() {
+  usePageTitle("KerjaReady");
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
       <a

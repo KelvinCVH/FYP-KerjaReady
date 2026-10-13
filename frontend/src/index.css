@@ -86,6 +86,7 @@
 @layer base {
   html {
     color-scheme: light;
+    touch-action: manipulation;
   }
 
   * {

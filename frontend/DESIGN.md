@@ -105,6 +105,7 @@ Every status shows a text label and an icon. Colour is never the only signal.
 
 - Radius rule: controls (button, input, select, badge, tab) are 8px. Containers (card, dialog, popover, panel) are 12px. Avatars are circles. No other radii.
 - In Tailwind: `rounded-md` and `rounded-lg` are both 8px (controls), and `rounded-xl` is 12px (containers). Do not use `rounded-sm`, `rounded-2xl` or `rounded-full` except for avatars.
+- Exceptions: checkboxes use a 4px radius and radio buttons are fully round, so each control keeps its recognisable shape.
 - Borders define surfaces. Shadows appear only on overlays (dropdown, popover, dialog), tinted with zinc, never pure black.
 
 ## 9. Components
