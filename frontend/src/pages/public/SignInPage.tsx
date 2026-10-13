@@ -10,7 +10,7 @@ export default function SignInPage() {
         {/* Temporary links until Cognito sign-in is built */}
         <Link to="/candidate/dashboard" className={linkClass}>Continue as candidate</Link>
         <Link to="/recruiter/dashboard" className={linkClass}>Continue as recruiter</Link>
-        <Link to="/sign-up" className={linkClass}>Create an account</Link>
+        <Link to="/register" className={linkClass}>Create an account</Link>
       </PlaceholderPage>
     </main>
   );

@@ -3,8 +3,9 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import type { NavItem } from "./layouts/SidebarLayout";
 
 import SignInPage from "./pages/public/SignInPage";
-import SignUpPage from "./pages/public/SignUpPage";
+import RegisterPage from "./pages/public/RegisterPage";
 import NotFoundPage from "./pages/public/NotFoundPage";
+import PrivacyNoticePage from "./pages/public/PrivacyNoticePage";
 
 import CandidateDashboardPage from "./pages/candidate/CandidateDashboardPage";
 import ResumePage from "./pages/candidate/ResumePage";
@@ -39,7 +40,8 @@ export const router = createBrowserRouter([
   // Sends users to sign-in for now; the sign-in story will redirect signed-in users to their dashboard
   { path: "/", element: <Navigate to="/sign-in" replace /> },
   { path: "/sign-in", element: <SignInPage /> },
-  { path: "/sign-up", element: <SignUpPage /> },
+  { path: "/register", element: <RegisterPage /> },
+    { path: "/privacy", element: <PrivacyNoticePage /> },
   {
     path: "/candidate",
     element: <SidebarLayout navItems={candidateNavItems} />,
