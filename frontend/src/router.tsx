@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import SidebarLayout from "./layouts/SidebarLayout";
 import type { NavItem } from "./layouts/SidebarLayout";
 
+import LandingPage from "./pages/public/LandingPage";
 import SignInPage from "./pages/public/SignInPage";
 import RegisterPage from "./pages/public/RegisterPage";
 import NotFoundPage from "./pages/public/NotFoundPage";
@@ -37,11 +38,10 @@ const recruiterNavItems: NavItem[] = [
 ];
 
 export const router = createBrowserRouter([
-  // Sends users to sign-in for now; the sign-in story will redirect signed-in users to their dashboard
-  { path: "/", element: <Navigate to="/sign-in" replace /> },
+  { path: "/", element: <LandingPage /> },
   { path: "/sign-in", element: <SignInPage /> },
   { path: "/register", element: <RegisterPage /> },
-    { path: "/privacy", element: <PrivacyNoticePage /> },
+  { path: "/privacy", element: <PrivacyNoticePage /> },
   {
     path: "/candidate",
     element: <SidebarLayout navItems={candidateNavItems} />,

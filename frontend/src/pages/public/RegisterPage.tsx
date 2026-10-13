@@ -1,16 +1,17 @@
 import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 import PlaceholderPage from "../../components/PlaceholderPage";
 
 export default function RegisterPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+    <main className="flex min-h-[100dvh] items-center justify-center bg-background p-6">
       <PlaceholderPage
-        title="Create an account"
-        description="Register as a candidate or recruiter, then verify your email."
+        title="Create Account"
+        description="Create a candidate or recruiter account, then verify your email."
       >
-        <Link to="/sign-in" className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100">
-          Back to sign in
-        </Link>
+        <Button asChild variant="outline">
+          <Link to="/sign-in">Back to Sign In</Link>
+        </Button>
       </PlaceholderPage>
     </main>
   );

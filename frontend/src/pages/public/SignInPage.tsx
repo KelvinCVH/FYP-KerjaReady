@@ -1,16 +1,21 @@
 import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 import PlaceholderPage from "../../components/PlaceholderPage";
-
-const linkClass = "rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100";
 
 export default function SignInPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-      <PlaceholderPage title="Sign in" description="Sign in with your email and password.">
+    <main className="flex min-h-[100dvh] items-center justify-center bg-background p-6">
+      <PlaceholderPage title="Sign In" description="Sign in with your email and password.">
         {/* Temporary links until Cognito sign-in is built */}
-        <Link to="/candidate/dashboard" className={linkClass}>Continue as candidate</Link>
-        <Link to="/recruiter/dashboard" className={linkClass}>Continue as recruiter</Link>
-        <Link to="/register" className={linkClass}>Create an account</Link>
+        <Button asChild variant="outline">
+          <Link to="/candidate/dashboard">Continue as Candidate</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/recruiter/dashboard">Continue as Recruiter</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/register">Create Account</Link>
+        </Button>
       </PlaceholderPage>
     </main>
   );

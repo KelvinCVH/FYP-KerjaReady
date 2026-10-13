@@ -16,6 +16,7 @@
   --primary: #047857;              /* emerald-700, 5.5:1 with white */
   --primary-hover: #065f46;        /* emerald-800 */
   --primary-foreground: #ffffff;
+  --primary-subtle: #ecfdf5;       /* emerald-50, decorative tinted surfaces only, never status */
 
   --secondary: #f4f4f5;            /* zinc-100 */
   --secondary-foreground: #18181b;
@@ -49,6 +50,7 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-subtle: var(--primary-subtle);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
