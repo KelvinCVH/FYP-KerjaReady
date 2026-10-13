@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS resumes(
     uploaded_at timestamptz NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE resumes IS 'Resume uploaded by candidate and its extracted text';
-CREATE INDEX IF NOT EXISTS resume_candidate_id_index ON resumes (candidate_id);
+CREATE INDEX IF NOT EXISTS resumes_candidate_id_index ON resumes (candidate_id);
 
 -- resume_skills table: Skills evidenced in a resume with the text that evidences each one
 CREATE TABLE IF NOT EXISTS resume_skills(

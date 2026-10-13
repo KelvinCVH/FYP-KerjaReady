@@ -9,6 +9,7 @@ from aws_cdk import (
     aws_rds as rds,
     aws_s3 as s3,
     aws_cognito as cognito,
+    aws_iam as iam,
     aws_lambda as _lambda,
     aws_apigatewayv2 as apigwv2,
     aws_apigatewayv2_integrations as apigwv2_integrations,
@@ -64,21 +65,98 @@ class KerjaReadyStack(Stack):
             enforce_ssl=True,
         )
 
-        # Auth: Cognito User Pool, web client, role groups
+        # Shared settings for every Lambda that uses the Data API
+        data_api_environment = {
+            "CLUSTER_ARN": self.cluster.cluster_arn,
+            "SECRET_ARN": self.cluster.secret.secret_arn,
+            "DATABASE_NAME": DATABASE_NAME,
+        }
+
+        # Registration: Lambda function used by Cognito triggers
+        create_user_record_function = self._create_python_function(
+            "CreateUserRecordFunction",
+            "create-user-record",
+            timeout=Duration.minutes(3),
+            environment=data_api_environment,
+        )
+        self.cluster.grant_data_api_access(create_user_record_function)
+
+        validate_registration_function = self._create_python_function(
+            "ValidateRegistrationFunction",
+            "validate-registration",
+            timeout=Duration.seconds(5),
+        )
+
+        complete_registration_function = self._create_python_function(
+            "CompleteRegistrationFunction",
+            "complete-registration",
+            timeout=Duration.seconds(5),
+            memory_size=512,
+            environment={
+                "CREATE_USER_RECORD_FUNCTION_NAME": create_user_record_function.function_name,
+            },
+        )
+        create_user_record_function.grant_invoke(complete_registration_function)
+
+        # A wildcard pool ARN avoids a circular dependency between the pool and its own trigger
+        complete_registration_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions = ["cognito-idp:AdminAddUserToGroup", "cognito-idp:AdminGetUser"],
+                resources=[
+                    self.format_arn(service="cognito-idp", resource="userpool",resource_name="*")
+                ],
+            )
+        )
+
+        # Auth: Cognito User Pool
+
         self.user_pool = cognito.UserPool(
             self,
-            "UserPool",
+            "KerjaReadyUserPool",
             self_sign_up_enabled=True,
             sign_in_aliases=cognito.SignInAliases(email=True),
+            sign_in_case_sensitive=False,
             auto_verify=cognito.AutoVerifiedAttrs(email=True),
             account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            standard_attributes=cognito.StandardAttributes(
+                email=cognito.StandardAttribute(required=True, mutable=True),
+                fullname=cognito.StandardAttribute(required=True, mutable=True),
+            ),
+            custom_attributes={
+                "account_type": cognito.StringAttribute(min_len=1, max_len=20, mutable=False),
+                "company_name": cognito.StringAttribute(min_len=1, max_len=150, mutable=True),
+            },
+            password_policy=cognito.PasswordPolicy(
+                min_length=8,
+                require_lowercase=True,
+                require_uppercase=True,
+                require_digits=True,
+                require_symbols=True,
+            ),
+            user_verification=cognito.UserVerificationConfig(
+                email_style=cognito.VerificationEmailStyle.CODE,
+                email_subject="Your KerjaReady verification code",
+                email_body="Your KerjaReady verification code is {####}. Enter it to finish creating your account",
+            ),
+            lambda_triggers=cognito.UserPoolTriggers(
+                pre_sign_up=validate_registration_function,
+                post_confirmation=complete_registration_function,
+            ),
+        )
+
+        client_attributes = (
+            cognito.ClientAttributes().with_standard_attributes(email=True, fullname=True).with_custom_attributes("account_type", "company_name")
         )
         self.user_pool_client = self.user_pool.add_client(
             "WebClient",
             generate_secret=False,
             auth_flows=cognito.AuthFlow(user_srp=True),
             disable_o_auth=True,
+            prevent_user_existence_errors=True,
+            read_attributes=client_attributes,
+            write_attributes=client_attributes,
         )
+
         for group in ("candidate", "recruiter"):
             cognito.CfnUserPoolGroup(
                 self,
@@ -87,23 +165,11 @@ class KerjaReadyStack(Stack):
                 group_name=group,
             )
 
-        # Shared settings for every Lambda that uses the Data API
-        data_api_environment = {
-            "CLUSTER_ARN": self.cluster.cluster_arn,
-            "SECRET_ARN": self.cluster.secret.secret_arn,
-            "DATABASE_NAME": DATABASE_NAME,
-        }
-
         # Lambda: health check through the Data API
-        check_health_function = _lambda.Function(
-            self,
+        check_health_function = self._create_python_function(
             "CheckHealthFunction",
-            function_name="kerjaready-check-health",
-            runtime=_lambda.Runtime.PYTHON_3_12,
-            handler="check_health.handler",
-            code=_lambda.Code.from_asset(str(FUNCTIONS_DIR / "check-health")),
+            "check-health",
             timeout=Duration.seconds(25),
-            memory_size=256,
             environment=data_api_environment,
         )
         self.cluster.grant_data_api_access(check_health_function)
@@ -119,16 +185,11 @@ class KerjaReadyStack(Stack):
         )
 
         # Lambda: Apply SQL migrations through the Data API
-        run_database_migration_function = _lambda.Function(
-            self,
+        run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",
-            function_name = "kerjaready-run-database-migration",
-            runtime = _lambda.Runtime.PYTHON_3_12,
-            handler = "run_database_migration.handler",
-            code = _lambda.Code.from_asset(str(FUNCTIONS_DIR / "run-database-migration")),
-            timeout = Duration.minutes(4),
-            memory_size = 256,
-            environment = data_api_environment,
+            "run-database-migration",
+            timeout=Duration.minutes(4),
+            environment=data_api_environment,
         )
         self.cluster.grant_data_api_access(run_database_migration_function)
 
@@ -148,3 +209,25 @@ class KerjaReadyStack(Stack):
         CfnOutput(self, "UserPoolId", value=self.user_pool.user_pool_id)
         CfnOutput(self, "UserPoolClientId", value=self.user_pool_client.user_pool_client_id)
         CfnOutput(self, "ApiUrl", value=self.http_api.api_endpoint)
+
+    def _create_python_function(
+        self,
+        construct_id: str,
+        folder_name: str,
+        timeout: Duration,
+        environment: dict | None=None,
+        memory_size: int=256,
+    ) -> _lambda.Function:
+        """Creata a Python 3.12 Lambda from backend/functions/"""
+        module_name= folder_name.replace("-", "_")
+        return _lambda.Function(
+            self, 
+            construct_id,
+            function_name = f"kerjaready-{folder_name}",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            handler=f"{module_name}.handler",
+            code=_lambda.Code.from_asset(str(FUNCTIONS_DIR / folder_name)),
+            timeout=timeout,
+            memory_size=memory_size,
+            environment=environment or {},
+        )
