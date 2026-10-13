@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { focusRing } from "./styles";
 
@@ -12,15 +13,7 @@ export default function LandingHeader() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-4 md:px-8">
-        <Link to="/" className={`flex items-center gap-2 text-lg font-semibold ${focusRing}`}>
-          <span
-            aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground"
-          >
-            K
-          </span>
-          <span translate="no">KerjaReady</span>
-        </Link>
+        <Logo />
 
         <nav aria-label="Main" className="hidden md:block">
           <ul className="flex items-center gap-8">

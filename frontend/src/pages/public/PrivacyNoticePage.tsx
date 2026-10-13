@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 // Replace before release
 const CONTACT_EMAIL = "[CONTACT EMAIL]";
@@ -28,6 +29,8 @@ function NoticeSection({ id, title, children }: NoticeSectionProps) {
 }
 
 export default function PrivacyNoticePage() {
+  usePageTitle("Privacy Notice | KerjaReady");
+
   return (
     <div className="min-h-[100dvh] bg-zinc-50 text-zinc-900">
       <a
