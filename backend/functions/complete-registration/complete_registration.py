@@ -19,17 +19,20 @@ def handler(event, context):
     user_pool_id = event["userPoolId"]
     username = event["userName"]
     attributes = event["request"]["userAttributes"]
-    account_type = attributes["custom:account_type"]
+    if "identities" in attributes or attributes.get("cognito:user_status") == "EXTERNAL_PROVIDER":
+        account_type = "candidate"
+    else:
+        account_type = attributes["custom:account_type"]
 
     cognito.admin_add_user_to_group(
         UserPoolId=user_pool_id, Username=username, GroupName=account_type
     )
 
-    # Cognito sets UserCreateDate when it accepts the sign-up request. 
-    # The pre sign-up trigger only accepts requests with consent, so this is the consent time.
+    # UserCreateDate is the consent time: email sign-ups must tick the consent box,
+    # and Google users agree through the Privacy Notice line under the Google button.
     user = cognito.admin_get_user(UserPoolId=user_pool_id, Username=username)
     
-    record={
+    record = {
         "user_id": attributes["sub"],
         "email": attributes["email"].strip().lower(),
         "full_name": attributes["name"].strip(),

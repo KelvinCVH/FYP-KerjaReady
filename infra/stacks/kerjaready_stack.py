@@ -4,6 +4,7 @@ from aws_cdk import (
     Stack,
     Duration,
     CfnOutput,
+    SecretValue,
     triggers,
     aws_ec2 as ec2,
     aws_rds as rds,
@@ -18,6 +19,9 @@ from aws_cdk import (
 from constructs import Construct
 
 PG_VERSION = "16.14"
+GOOGLE_CLIENT_ID = "652526367677-cuaork6oth7a82vdcuat7dqgac9l7cal.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET_NAME = "kerjaready-google-client-secret"
+WEB_APP_URLS = ["http://localhost:5173"]
 DATABASE_NAME = "kerjaready"
 FUNCTIONS_DIR = Path(__file__).resolve().parents[2] / "backend" / "functions"
 
@@ -85,6 +89,7 @@ class KerjaReadyStack(Stack):
             "ValidateRegistrationFunction",
             "validate-registration",
             timeout=Duration.seconds(5),
+            memory_size=512,
         )
 
         complete_registration_function = self._create_python_function(
@@ -108,8 +113,16 @@ class KerjaReadyStack(Stack):
             )
         )
 
-        # Auth: Cognito User Pool
+        validate_registration_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["cognito-idp:ListUsers", "cognito-idp:AdminLinkProviderForUser"],
+                resources=[
+                    self.format_arn(service="cognito-idp", resource="userpool", resource_name="*")
+                ],
+            )
+        )
 
+        # Auth: Cognito User Pool
         self.user_pool = cognito.UserPool(
             self,
             "KerjaReadyUserPool",
@@ -117,6 +130,7 @@ class KerjaReadyStack(Stack):
             sign_in_aliases=cognito.SignInAliases(email=True),
             sign_in_case_sensitive=False,
             auto_verify=cognito.AutoVerifiedAttrs(email=True),
+            keep_original=cognito.KeepOriginalAttrs(email=True),
             account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
             standard_attributes=cognito.StandardAttributes(
                 email=cognito.StandardAttribute(required=True, mutable=True),
@@ -144,18 +158,61 @@ class KerjaReadyStack(Stack):
             ),
         )
 
-        client_attributes = (
-            cognito.ClientAttributes().with_standard_attributes(email=True, fullname=True).with_custom_attributes("account_type", "company_name")
+        # Cognito domain for Google sign-in redirects
+        self.user_pool_domain = self.user_pool.add_domain(
+            "KerjaReadyUserPoolDomain",
+            cognito_domain = cognito.CognitoDomainOptions(domain_prefix="kerjaready"),
         )
+
+        # Google sign-in
+        google_provider = cognito.UserPoolIdentityProviderGoogle(
+            self,
+            "GoogleIdentityProvider",
+            user_pool = self.user_pool,
+            client_id = GOOGLE_CLIENT_ID,
+            client_secret_value = SecretValue.secrets_manager(GOOGLE_CLIENT_SECRET_NAME),
+            scopes=["openid","email","profile"],
+            attribute_mapping=cognito.AttributeMapping(
+                email=cognito.ProviderAttribute.GOOGLE_EMAIL,
+                email_verified=cognito.ProviderAttribute.GOOGLE_EMAIL_VERIFIED,
+                fullname=cognito.ProviderAttribute.GOOGLE_NAME,
+            )
+        )
+
+        client_read_attributes = (
+            cognito.ClientAttributes()
+            .with_standard_attributes(email=True, email_verified=True, fullname=True)
+            .with_custom_attributes("account_type", "company_name")
+        )
+        client_write_attributes = (
+            cognito.ClientAttributes()
+            .with_standard_attributes(email=True, fullname=True)
+            .with_custom_attributes("account_type", "company_name")
+        )
+
         self.user_pool_client = self.user_pool.add_client(
             "WebClient",
             generate_secret=False,
             auth_flows=cognito.AuthFlow(user_srp=True),
-            disable_o_auth=True,
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(authorization_code_grant=True),
+                scopes=[
+                    cognito.OAuthScope.OPENID,
+                    cognito.OAuthScope.EMAIL,
+                    cognito.OAuthScope.PROFILE,
+                ],
+                callback_urls=[f"{url}/auth/callback" for url in WEB_APP_URLS],
+                logout_urls=[f"{url}/sign-in" for url in WEB_APP_URLS],
+            ),
+            supported_identity_providers=[
+                cognito.UserPoolClientIdentityProvider.COGNITO,
+                cognito.UserPoolClientIdentityProvider.GOOGLE,
+            ],
             prevent_user_existence_errors=True,
-            read_attributes=client_attributes,
-            write_attributes=client_attributes,
+            read_attributes=client_read_attributes,
+            write_attributes=client_write_attributes,
         )
+        self.user_pool_client.node.add_dependency(google_provider)
 
         for group in ("candidate", "recruiter"):
             cognito.CfnUserPoolGroup(
@@ -208,6 +265,8 @@ class KerjaReadyStack(Stack):
         CfnOutput(self, "ResumeBucketName", value=self.resume_bucket.bucket_name)
         CfnOutput(self, "UserPoolId", value=self.user_pool.user_pool_id)
         CfnOutput(self, "UserPoolClientId", value=self.user_pool_client.user_pool_client_id)
+        CfnOutput(self, "UserPoolDomainUrl", value=self.user_pool_domain.base_url())
+        CfnOutput(self, "GoogleRedirectUrl", value=f"{self.user_pool_domain.base_url()}/oauth2/idpresponse",)
         CfnOutput(self, "ApiUrl", value=self.http_api.api_endpoint)
 
     def _create_python_function(
