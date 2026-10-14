@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-request: read
 
 env:
   AWS_DEFAULT_REGION: ap-southeast-5
