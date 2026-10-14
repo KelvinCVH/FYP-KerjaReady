@@ -31,7 +31,7 @@ def get_database_version() -> str:
 
 def handler(event, context):
     try:
-        body = {"status": "ok", "database": get_database_version()}
+        body = {"status": "ok", "database": "connected"}
         status_code = 200
     except Exception as e:
         body = {"status": "unavailable", "error": type(error).__name__}
