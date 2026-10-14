@@ -10,7 +10,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
-GITHUB_REPO = "KelvinCVH/FYP-KerjaReady"
+GITHUB_MAIN_BRANCH_SUBJECT = "repo:KelvinCVH@139412913/FYP-KerjaReady@1405526635:ref:refs/heads/main"
 
 class KerjaReadyCiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -36,7 +36,7 @@ class KerjaReadyCiStack(Stack):
                 conditions={
                     "StringEquals": {
                         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                        "token.actions.githubusercontent.com:sub": f"repo:{GITHUB_REPO}:ref:refs/heads/main",
+                        "token.actions.githubusercontent.com:sub": GITHUB_MAIN_BRANCH_SUBJECT,
                     }
                 },
             ),
