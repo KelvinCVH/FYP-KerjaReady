@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import { Link, useNavigate } from "react-router";
 import { signUp } from "aws-amplify/auth";
@@ -6,13 +6,15 @@ import { ArrowLeft } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import FieldError from "@/components/auth/FieldError";
 import FormAlert from "@/components/auth/FormAlert";
+import FormField from "@/components/auth/FormField";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import OrDivider from "@/components/auth/OrDivider";
 import PasswordInput from "@/components/auth/PasswordInput";
 import SignInPrompt from "@/components/auth/SignInPrompt";
 import SubmitButton from "@/components/auth/SubmitButton";
 import { errorLink, inlineLink, quietLink } from "@/components/auth/authFormClasses";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { savePendingRegistration } from "@/lib/pendingRegistration";
 import { mapRegistrationError } from "@/lib/registrationErrors";
 import {
@@ -48,38 +50,6 @@ const pageCopy: Record<
     emailPlaceholder: "daniel.lim@example.com…",
   },
 };
-
-type FieldProps = {
-  id: string;
-  label: string;
-  error?: ReactNode;
-  helper?: string;
-  // Receives the aria props to spread on the control
-  children: (aria: { "aria-invalid"?: true; "aria-describedby"?: string }) => ReactNode;
-};
-
-// Label above the control, then the error, then the helper text (DESIGN.md 9.2)
-function Field({ id, label, error, helper, children }: FieldProps) {
-  const errorId = `${id}-error`;
-  const helperId = `${id}-helper`;
-  const describedBy = [error && errorId, helper && helperId].filter(Boolean).join(" ");
-
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      {children({
-        "aria-invalid": error ? true : undefined,
-        "aria-describedby": describedBy || undefined,
-      })}
-      {error && <FieldError id={errorId}>{error}</FieldError>}
-      {helper && (
-        <p id={helperId} className="text-sm text-muted-foreground">
-          {helper}
-        </p>
-      )}
-    </div>
-  );
-}
 
 type AccountDetailsPageProps = {
   accountType: AccountType;
@@ -206,8 +176,16 @@ export default function AccountDetailsPage({ accountType }: AccountDetailsPagePr
       <h1 className="mt-4 text-2xl font-semibold">{copy.title}</h1>
       <p className="mt-2 text-base leading-relaxed text-muted-foreground">{copy.description}</p>
 
-      <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-6">
-        <Field id="full-name" label="Full Name" error={errors.fullName}>
+      {/* Google sign-in creates candidate accounts only */}
+      {!isRecruiter && (
+        <div className="mt-8 space-y-6">
+          <GoogleSignInButton />
+          <OrDivider />
+        </div>
+      )}
+
+      <form noValidate onSubmit={handleSubmit} className={`${isRecruiter ? "mt-8" : "mt-6"} space-y-6`}>
+        <FormField id="full-name" label="Full Name" error={errors.fullName}>
           {(aria) => (
             <Input
               {...aria}
@@ -223,9 +201,9 @@ export default function AccountDetailsPage({ accountType }: AccountDetailsPagePr
               }}
             />
           )}
-        </Field>
+        </FormField>
 
-        <Field
+        <FormField
           id="email"
           label="Email"
           error={
@@ -261,10 +239,10 @@ export default function AccountDetailsPage({ accountType }: AccountDetailsPagePr
               }}
             />
           )}
-        </Field>
+        </FormField>
 
         {isRecruiter && (
-          <Field
+          <FormField
             id="company-name"
             label="Company Name"
             error={errors.companyName}
@@ -285,10 +263,10 @@ export default function AccountDetailsPage({ accountType }: AccountDetailsPagePr
                 }}
               />
             )}
-          </Field>
+          </FormField>
         )}
 
-        <Field id="password" label="Password" error={errors.password} helper={PASSWORD_HINT}>
+        <FormField id="password" label="Password" error={errors.password} helper={PASSWORD_HINT}>
           {(aria) => (
             <PasswordInput
               {...aria}
@@ -303,7 +281,7 @@ export default function AccountDetailsPage({ accountType }: AccountDetailsPagePr
               }}
             />
           )}
-        </Field>
+        </FormField>
 
         <div className="space-y-2">
           <div className="flex items-start gap-3">

@@ -2,21 +2,20 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import { Link, Navigate, useLocation } from "react-router";
 import { confirmSignUp, resendSignUpCode } from "aws-amplify/auth";
-import { Check, CircleCheck, Mail } from "lucide-react";
+import { Check, Mail } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
+import CodeInput from "@/components/auth/CodeInput";
 import FieldError from "@/components/auth/FieldError";
 import FormAlert from "@/components/auth/FormAlert";
+import ResendCode from "@/components/auth/ResendCode";
 import SubmitButton from "@/components/auth/SubmitButton";
-import { iconTile, inlineLink, quietLink } from "@/components/auth/authFormClasses";
+import { iconTile, quietLink } from "@/components/auth/authFormClasses";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { clearPendingRegistration, readPendingRegistration } from "@/lib/pendingRegistration";
 import { mapRegistrationError } from "@/lib/registrationErrors";
 import { validateCode, type AccountType } from "@/lib/registrationValidation";
-
-const RESEND_COOLDOWN_MS = 30_000;
 
 function getStateEmail(state: unknown) {
   if (typeof state !== "object" || state === null) return undefined;
@@ -59,22 +58,15 @@ function VerifyForm({ email, accountType, onVerified }: VerifyFormProps) {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [resent, setResent] = useState(false);
-  const [cooldown, setCooldown] = useState(false);
 
   const codeRef = useRef<HTMLInputElement>(null);
   const formAlertRef = useRef<HTMLDivElement>(null);
-  const cooldownTimer = useRef<number | undefined>(undefined);
-
-  useEffect(() => () => window.clearTimeout(cooldownTimer.current), []);
 
   function showError(error: unknown) {
     const mapped = mapRegistrationError(error);
     const isCodeError = mapped.field === "code";
     flushSync(() => {
       setPending(false);
-      setResending(false);
       setCodeError(isCodeError ? mapped.message : null);
       setFormError(isCodeError ? null : mapped.message);
     });
@@ -105,24 +97,6 @@ function VerifyForm({ email, accountType, onVerified }: VerifyFormProps) {
     }
   }
 
-  async function handleResend() {
-    if (resending || cooldown) return;
-
-    setResending(true);
-    setResent(false);
-    setFormError(null);
-    try {
-      await resendSignUpCode({ username: email });
-      setResending(false);
-      setResent(true);
-      setCooldown(true);
-      window.clearTimeout(cooldownTimer.current);
-      cooldownTimer.current = window.setTimeout(() => setCooldown(false), RESEND_COOLDOWN_MS);
-    } catch (caught) {
-      showError(caught);
-    }
-  }
-
   return (
     <>
       <div aria-hidden="true" className={iconTile}>
@@ -139,22 +113,17 @@ function VerifyForm({ email, accountType, onVerified }: VerifyFormProps) {
       <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-6">
         <div className="space-y-2">
           <Label htmlFor="code">Verification Code</Label>
-          <Input
+          <CodeInput
             ref={codeRef}
             id="code"
             name="code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            spellCheck={false}
-            placeholder="000000"
             value={code}
-            onChange={(event) => {
-              setCode(event.target.value.replace(/\s/g, ""));
+            onValueChange={(value) => {
+              setCode(value);
               setCodeError(null);
             }}
             aria-invalid={codeError ? true : undefined}
             aria-describedby={codeError ? "code-error" : undefined}
-            className="text-center font-mono text-lg tracking-[0.4em] tabular-nums"
           />
           {codeError && <FieldError id="code-error">{codeError}</FieldError>}
         </div>
@@ -166,32 +135,15 @@ function VerifyForm({ email, accountType, onVerified }: VerifyFormProps) {
         </SubmitButton>
       </form>
 
-      <div className="mt-6 text-center text-sm text-pretty text-muted-foreground">
-        <p>
-          Didn’t get the code?{" "}
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={resending || cooldown}
-            className={`font-medium ${inlineLink} disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            Resend Code
-          </button>
-        </p>
-        <p className="mt-1">Check your spam folder. The code expires in 24 hours.</p>
-        {/* Always rendered so screen readers announce the message when it appears */}
-        <p
-          aria-live="polite"
-          className={resent ? "flex items-center justify-center gap-1.5 pt-1 text-emerald-800" : ""}
-        >
-          {resent && (
-            <>
-              <CircleCheck aria-hidden="true" className="size-4" />
-              We sent a new code.
-            </>
-          )}
-        </p>
-      </div>
+      <ResendCode
+        onResend={async () => {
+          await resendSignUpCode({ username: email });
+        }}
+        onStart={() => setFormError(null)}
+        onSent={() => setCodeError(null)}
+        onError={showError}
+        hint="Check your spam folder. The code expires in 24 hours."
+      />
 
       <div className="mt-6 border-t border-border pt-4 text-center">
         <Link

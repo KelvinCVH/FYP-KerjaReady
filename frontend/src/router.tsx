@@ -1,9 +1,13 @@
 import { createBrowserRouter, Navigate } from "react-router";
+import RequireAuth from "./components/auth/RequireAuth";
 import SidebarLayout from "./layouts/SidebarLayout";
 import type { NavItem } from "./layouts/SidebarLayout";
 
 import LandingPage from "./pages/public/LandingPage";
 import SignInPage from "./pages/public/SignInPage";
+import AuthCallbackPage from "./pages/public/AuthCallbackPage";
+import ForgotPasswordPage from "./pages/public/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/public/ResetPasswordPage";
 import RegisterPage from "./pages/public/RegisterPage";
 import AccountDetailsPage from "./pages/public/AccountDetailsPage";
 import VerifyEmailPage from "./pages/public/VerifyEmailPage";
@@ -42,6 +46,9 @@ const recruiterNavItems: NavItem[] = [
 export const router = createBrowserRouter([
   { path: "/", element: <LandingPage /> },
   { path: "/sign-in", element: <SignInPage /> },
+  { path: "/auth/callback", element: <AuthCallbackPage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/register", element: <RegisterPage /> },
   {
     path: "/register/candidate",
@@ -55,7 +62,11 @@ export const router = createBrowserRouter([
   { path: "/privacy", element: <PrivacyNoticePage /> },
   {
     path: "/candidate",
-    element: <SidebarLayout navItems={candidateNavItems} />,
+    element: (
+      <RequireAuth>
+        <SidebarLayout navItems={candidateNavItems} />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <CandidateDashboardPage /> },
@@ -71,7 +82,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/recruiter",
-    element: <SidebarLayout navItems={recruiterNavItems} />,
+    element: (
+      <RequireAuth>
+        <SidebarLayout navItems={recruiterNavItems} />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <RecruiterDashboardPage /> },

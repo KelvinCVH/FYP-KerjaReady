@@ -1,3 +1,11 @@
+import {
+  cleanCognitoMessage,
+  CODE_EXPIRED_MESSAGE,
+  CODE_MISMATCH_MESSAGE,
+  GENERIC_ERROR_MESSAGE,
+  getErrorName,
+  TOO_MANY_ATTEMPTS_MESSAGE,
+} from "./cognitoMessages";
 import { getPasswordRuleError, PASSWORD_HINT } from "./registrationValidation";
 
 export type RegistrationErrorField = "email" | "password" | "code" | "form";
@@ -8,19 +16,6 @@ export type RegistrationError = {
   // Render a "Sign In" link after the message
   signInLink?: boolean;
 };
-
-const GENERIC_MESSAGE = "Something went wrong. Try again.";
-const PRE_SIGN_UP_PREFIX = /^PreSignUp failed with error\s*/;
-
-function getErrorName(error: unknown) {
-  return error instanceof Error ? error.name : undefined;
-}
-
-// The pre sign-up Lambda's messages arrive as "PreSignUp failed with error <message>"
-function cleanLambdaMessage(message: string) {
-  const text = message.replace(PRE_SIGN_UP_PREFIX, "").trim().replace(/\.+$/, "");
-  return text ? `${text}.` : GENERIC_MESSAGE;
-}
 
 // Maps an Amplify Auth (Cognito) error to a message and the field it belongs to
 export function mapRegistrationError(
@@ -40,18 +35,15 @@ export function mapRegistrationError(
         message: getPasswordRuleError(context.password ?? "") ?? PASSWORD_HINT,
       };
     case "UserLambdaValidationException":
-      return { field: "form", message: cleanLambdaMessage((error as Error).message) };
+      return { field: "form", message: cleanCognitoMessage((error as Error).message) };
     case "CodeMismatchException":
-      return { field: "code", message: "That code is incorrect. Check the email and try again." };
+      return { field: "code", message: CODE_MISMATCH_MESSAGE };
     case "ExpiredCodeException":
-      return {
-        field: "code",
-        message: "That code has expired. Select Resend Code to get a new one.",
-      };
+      return { field: "code", message: CODE_EXPIRED_MESSAGE };
     case "LimitExceededException":
     case "TooManyRequestsException":
-      return { field: "form", message: "Too many attempts. Wait a few minutes and try again." };
+      return { field: "form", message: TOO_MANY_ATTEMPTS_MESSAGE };
     default:
-      return { field: "form", message: GENERIC_MESSAGE };
+      return { field: "form", message: GENERIC_ERROR_MESSAGE };
   }
 }
