@@ -144,6 +144,12 @@ class KerjaReadyStack(Stack):
             ),
         )
 
+        # Cognito domain for Google sign-in redirects
+        self.user_pool_domain = self.user_pool.add_domain(
+            "KerjaReadyUserPoolDomain",
+            cognito_domain = cognito.CognitoDomainOptions(domain_prefix="kerjaready"),
+        )
+
         client_attributes = (
             cognito.ClientAttributes().with_standard_attributes(email=True, fullname=True).with_custom_attributes("account_type", "company_name")
         )
@@ -208,6 +214,8 @@ class KerjaReadyStack(Stack):
         CfnOutput(self, "ResumeBucketName", value=self.resume_bucket.bucket_name)
         CfnOutput(self, "UserPoolId", value=self.user_pool.user_pool_id)
         CfnOutput(self, "UserPoolClientId", value=self.user_pool_client.user_pool_client_id)
+        CfnOutput(self, "UserPoolDomainUrl", value=self.user_pool_domain.base_url())
+        CfnOutput(self, "GoogleRedirectUrl", value=f"{self.user_pool_domain.base_url()}/oauth2/idpresponse",)
         CfnOutput(self, "ApiUrl", value=self.http_api.api_endpoint)
 
     def _create_python_function(
