@@ -33,13 +33,13 @@ def run_query(sql, parameters=None):
                 database=os.environ["DATABASE_NAME"],
                 sql=sql,
                 parameters=parameters or [],
-                formatRecords="JSON",
+                formatRecordsAs="JSON",
             )
             return json.loads(response.get("formattedRecords") or "[]")
 
         except ClientError as error:
             if error.response["Error"]["Code"] != "DatabaseResumingException":
                 raise
-            if attempt == "ATTEMPTS":
+            if attempt == ATTEMPTS:
                 raise DatabaseStarting() from error
             time.sleep(WAIT_SECONDS)

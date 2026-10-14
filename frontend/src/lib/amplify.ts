@@ -5,10 +5,12 @@ export function configureAmplify() {
   const userPoolId = import.meta.env.VITE_USER_POOL_ID;
   const userPoolClientId = import.meta.env.VITE_USER_POOL_CLIENT_ID;
   const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN;
+  // Read by apiClient.ts, checked here so a missing value fails at startup
+  const apiUrl = import.meta.env.VITE_API_URL;
 
-  if (!userPoolId || !userPoolClientId || !cognitoDomain) {
+  if (!userPoolId || !userPoolClientId || !cognitoDomain || !apiUrl) {
     throw new Error(
-      "Missing Cognito config: set VITE_USER_POOL_ID, VITE_USER_POOL_CLIENT_ID and VITE_COGNITO_DOMAIN in frontend/.env.local (see .env.example).",
+      "Missing config: set VITE_USER_POOL_ID, VITE_USER_POOL_CLIENT_ID, VITE_COGNITO_DOMAIN and VITE_API_URL in frontend/.env.local (see .env.example).",
     );
   }
 

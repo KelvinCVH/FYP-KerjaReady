@@ -45,19 +45,24 @@ export async function hasSession() {
   }
 }
 
-// Sends a signed-in user to their dashboard and returns true. Without a role, it saves the error for
-// Sign In, signs the user out and returns false. Google users then pass through Cognito's /logout.
-export async function redirectSignedInUser(navigate: NavigateFunction) {
-  const role = await getUserRole();
-  if (role) {
-    navigate(DASHBOARD_PATHS[role], { replace: true });
-    return true;
-  }
+// Saves the no-role error for Sign In, then signs the user out. Google users pass through Cognito's /logout.
+export async function signOutWithoutRole() {
   saveSignInError(NO_ROLE_MESSAGE);
   try {
     await signOut();
   } catch {
     // Sign In still shows the saved error
   }
+}
+
+// Sends a signed-in user to their dashboard and returns true. Without a role, it signs the user out
+// with the no-role error and returns false.
+export async function redirectSignedInUser(navigate: NavigateFunction) {
+  const role = await getUserRole();
+  if (role) {
+    navigate(DASHBOARD_PATHS[role], { replace: true });
+    return true;
+  }
+  await signOutWithoutRole();
   return false;
 }

@@ -6,7 +6,7 @@ from kerjaready_shared.data_api import run_query
 @api_handler
 def handler(event, user):
     rows = run_query(
-        "SELECT email, full_name, account_type, company_name"
+        "SELECT email, full_name, account_type, company_name "
         "FROM users WHERE user_id = CAST(:user_id AS uuid)",
         [{"name": "user_id", "value": {"stringValue": user["user_id"]}}],
     )

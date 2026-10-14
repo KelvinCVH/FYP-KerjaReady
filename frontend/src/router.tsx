@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import RequireAuth from "./components/auth/RequireAuth";
+import RequireRole from "./components/auth/RequireRole";
 import SidebarLayout from "./layouts/SidebarLayout";
 import type { NavItem } from "./layouts/SidebarLayout";
 
@@ -63,9 +63,9 @@ export const router = createBrowserRouter([
   {
     path: "/candidate",
     element: (
-      <RequireAuth>
+      <RequireRole key="candidate" role="candidate">
         <SidebarLayout navItems={candidateNavItems} />
-      </RequireAuth>
+      </RequireRole>
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
@@ -83,9 +83,9 @@ export const router = createBrowserRouter([
   {
     path: "/recruiter",
     element: (
-      <RequireAuth>
+      <RequireRole key="recruiter" role="recruiter">
         <SidebarLayout navItems={recruiterNavItems} />
-      </RequireAuth>
+      </RequireRole>
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
