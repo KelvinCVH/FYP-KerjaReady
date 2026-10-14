@@ -89,6 +89,7 @@ class KerjaReadyStack(Stack):
             "ValidateRegistrationFunction",
             "validate-registration",
             timeout=Duration.seconds(5),
+            memory_size=512,
         )
 
         complete_registration_function = self._create_python_function(
@@ -108,6 +109,15 @@ class KerjaReadyStack(Stack):
                 actions = ["cognito-idp:AdminAddUserToGroup", "cognito-idp:AdminGetUser"],
                 resources=[
                     self.format_arn(service="cognito-idp", resource="userpool",resource_name="*")
+                ],
+            )
+        )
+
+        validate_registration_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["cognito-idp:ListUsers", "cognito-idp:AdminLinkProviderForUser"],
+                resources=[
+                    self.format_arn(service="cognito-idp", resource="userpool", resource_name="*")
                 ],
             )
         )
