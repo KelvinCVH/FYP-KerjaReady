@@ -14,6 +14,7 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_apigatewayv2 as apigwv2,
     aws_apigatewayv2_integrations as apigwv2_integrations,
+    aws_apigatewayv2_authorizers as apigwv2_authorizers,
 )
 
 from constructs import Construct
@@ -24,6 +25,7 @@ GOOGLE_CLIENT_SECRET_NAME = "kerjaready-google-client-secret"
 WEB_APP_URLS = ["http://localhost:5173"]
 DATABASE_NAME = "kerjaready"
 FUNCTIONS_DIR = Path(__file__).resolve().parents[2] / "backend" / "functions"
+LAYERS_DIR = Path(__file__).resolve().parents[2] / "backend" / "layers"
 
 class KerjaReadyStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -231,15 +233,70 @@ class KerjaReadyStack(Stack):
         )
         self.cluster.grant_data_api_access(check_health_function)
 
-        # API: HTTP API with a public health route
-        self.http_api = apigwv2.HttpApi(self, "HttpApi", api_name="kerjaready-api")
+        shared_layer = _lambda.LayerVersion(
+            self,
+            "SharedCodeLayer",
+            layer_version_name="kerjaready-shared",
+            code=_lambda.Code.from_asset(str(LAYERS_DIR/ "shared")),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_12],
+            description="Shared API role checks and Data API helper",
+        )
+
+        # API: every route requires a Cognito sign-in by default
+        user_pool_authorizer = apigwv2_authorizers.HttpUserPoolAuthorizer(
+            "CognitoUserPoolAuthorizer",
+            self.user_pool,
+            user_pool_clients=[self.user_pool_client],
+        )
+
+        self.http_api = apigwv2.HttpApi(
+            self,
+            "HttpApi",
+            api_name="kerjaready-api",
+            default_authorizer=user_pool_authorizer,
+            cors_preflight=apigwv2.CorsPreflightOptions(
+                allow_origins=WEB_APP_URLS,
+                allow_methods=[
+                    apigwv2.CorsHttpMethod.GET,
+                    apigwv2.CorsHttpMethod.POST,
+                    apigwv2.CorsHttpMethod.PUT,
+                    apigwv2.CorsHttpMethod.DELETE,
+                ],
+                allow_headers=["authorization", "content-type"],
+                max_age=Duration.days(1),
+            ),
+        )
+
+        # Public: health check only
         self.http_api.add_routes(
             path="/health",
             methods=[apigwv2.HttpMethod.GET],
             integration=apigwv2_integrations.HttpLambdaIntegration(
                 "CheckHealthIntegration", check_health_function
             ),
+            authorizer=apigwv2.HttpNoneAuthorizer(),
         )
+
+        # Signed In: Each user's own profile, checked by role in the shared layer
+        get_user_profile_function = self._create_python_function(
+            "GetUserProfileFunction",
+            "get-user-profile",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(get_user_profile_function)
+
+        profile_integration = apigwv2_integrations.HttpLambdaIntegration(
+            "GetUserProfileIntegration", get_user_profile_function
+        )
+
+        for role in ("candidate", "recruiter"):
+            self.http_api.add_routes(
+                path=f"/{role}/profile",
+                methods=[apigwv2.HttpMethod.GET],
+                integration=profile_integration,
+            )
 
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
@@ -276,8 +333,9 @@ class KerjaReadyStack(Stack):
         timeout: Duration,
         environment: dict | None=None,
         memory_size: int=256,
+        layers: list | None = None,
     ) -> _lambda.Function:
-        """Creata a Python 3.12 Lambda from backend/functions/"""
+        """Create a Python 3.12 Lambda from backend/functions/"""
         module_name= folder_name.replace("-", "_")
         return _lambda.Function(
             self, 
@@ -289,4 +347,5 @@ class KerjaReadyStack(Stack):
             timeout=timeout,
             memory_size=memory_size,
             environment=environment or {},
+            layers=layers or [],
         )
