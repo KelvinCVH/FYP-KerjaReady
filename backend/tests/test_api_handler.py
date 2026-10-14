@@ -1,6 +1,14 @@
+import json
+
 import pytest
 
-from kerjaready_shared.api_handler import AccessDenied, authorize, parse_groups, required_role
+from kerjaready_shared.api_handler import (
+    AccessDenied,
+    api_handler,
+    authorize,
+    parse_groups,
+    required_role,
+)
 
 
 def make_event(route_key, groups):
@@ -50,3 +58,27 @@ def test_google_group_is_ignored():
 def test_user_without_role_is_blocked():
     with pytest.raises(AccessDenied):
         authorize(make_event("GET /candidate/profile", "[ap-southeast-5_abc_Google]"))
+
+
+def test_wrong_role_returns_json_403():
+    @api_handler
+    def handler(event, user):
+        return 200, {"ok": True}
+
+    response = handler(make_event("GET /recruiter/profile", "[candidate]"), None)
+
+    assert response["statusCode"] == 403
+    assert response["headers"]["Content-Type"] == "application/json"
+    assert "message" in json.loads(response["body"])
+
+
+def test_allowed_route_returns_json_body():
+    @api_handler
+    def handler(event, user):
+        return 200, {"ok": True}
+
+    response = handler(make_event("GET /candidate/profile", "[candidate]"), None)
+
+    assert response["statusCode"] == 200
+    assert response["headers"]["Content-Type"] == "application/json"
+    assert json.loads(response["body"]) == {"ok": True}
