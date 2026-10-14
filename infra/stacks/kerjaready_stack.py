@@ -5,6 +5,7 @@ from aws_cdk import (
     Duration,
     CfnOutput,
     SecretValue,
+    Annotations,
     triggers,
     aws_ec2 as ec2,
     aws_rds as rds,
@@ -15,6 +16,9 @@ from aws_cdk import (
     aws_apigatewayv2 as apigwv2,
     aws_apigatewayv2_integrations as apigwv2_integrations,
     aws_apigatewayv2_authorizers as apigwv2_authorizers,
+    aws_cloudfront as cloudfront,
+    aws_cloudfront_origins as origins,
+    aws_s3_deployment as s3deploy,
 )
 
 from constructs import Construct
@@ -26,6 +30,7 @@ WEB_APP_URLS = ["http://localhost:5173"]
 DATABASE_NAME = "kerjaready"
 FUNCTIONS_DIR = Path(__file__).resolve().parents[2] / "backend" / "functions"
 LAYERS_DIR = Path(__file__).resolve().parents[2] / "backend" / "layers"
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 class KerjaReadyStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -70,6 +75,57 @@ class KerjaReadyStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
             enforce_ssl=True,
         )
+
+        self.frontend_bucket = s3.Bucket(
+            self,
+            "FrontendBucket",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            enforce_ssl=True,
+        )
+
+        self.frontend_distribution = cloudfront.Distribution(
+            self,
+            "FrontendDistribution",
+            comment="kerjaready-frontend",
+            default_root_object="index.html",
+            price_class=cloudfront.PriceClass.PRICE_CLASS_200,
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origins.S3BucketOrigin.with_origin_access_control(self.frontend_bucket),
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED,
+                response_headers_policy=cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
+            ),
+            # React router handles every path, unknown files fall back to index.html
+            error_responses=[
+                cloudfront.ErrorResponse(
+                    http_status=status,
+                    response_http_status=200,
+                    response_page_path="/index.html",
+                    ttl=Duration.seconds(0),
+                )
+                for status in (403, 404)
+            ],
+        )
+
+        frontend_url = f"https://{self.frontend_distribution.distribution_domain_name}"
+        web_app_urls = [*WEB_APP_URLS, frontend_url]
+
+        # Upload the built frontend and clear CloudFront's cache
+        if (FRONTEND_DIST / "index.html").exists():
+            s3deploy.BucketDeployment(
+                self,
+                "FrontendDeployment",
+                sources=[s3deploy.Source.asset(str(FRONTEND_DIST))],
+                destination_bucket=self.frontend_bucket,
+                distribution=self.frontend_distribution,
+                distribution_paths=["/*"],
+                memory_limit=512,
+            )
+        else:
+            Annotations.of(self).add_warning(
+                "frontend/dist not found. Run npm run build in frontend before cdk deploy."
+            )
 
         # Shared settings for every Lambda that uses the Data API
         data_api_environment = {
@@ -203,8 +259,8 @@ class KerjaReadyStack(Stack):
                     cognito.OAuthScope.EMAIL,
                     cognito.OAuthScope.PROFILE,
                 ],
-                callback_urls=[f"{url}/auth/callback" for url in WEB_APP_URLS],
-                logout_urls=[f"{url}/sign-in" for url in WEB_APP_URLS],
+                callback_urls=[f"{url}/auth/callback" for url in web_app_urls],
+                logout_urls=[f"{url}/sign-in" for url in web_app_urls],
             ),
             supported_identity_providers=[
                 cognito.UserPoolClientIdentityProvider.COGNITO,
@@ -255,7 +311,7 @@ class KerjaReadyStack(Stack):
             api_name="kerjaready-api",
             default_authorizer=user_pool_authorizer,
             cors_preflight=apigwv2.CorsPreflightOptions(
-                allow_origins=WEB_APP_URLS,
+                allow_origins=web_app_urls,
                 allow_methods=[
                     apigwv2.CorsHttpMethod.GET,
                     apigwv2.CorsHttpMethod.POST,
@@ -325,6 +381,7 @@ class KerjaReadyStack(Stack):
         CfnOutput(self, "UserPoolDomainUrl", value=self.user_pool_domain.base_url())
         CfnOutput(self, "GoogleRedirectUrl", value=f"{self.user_pool_domain.base_url()}/oauth2/idpresponse",)
         CfnOutput(self, "ApiUrl", value=self.http_api.api_endpoint)
+        CfnOutput(self, "FrontendUrl", value=frontend_url)
 
     def _create_python_function(
         self,
