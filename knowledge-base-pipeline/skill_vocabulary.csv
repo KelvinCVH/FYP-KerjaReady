@@ -1,0 +1,282 @@
+skill,aliases,case_sensitive_aliases,esco_uri,onet_example
+Python,python,,http://data.europa.eu/esco/skill/ccd0a1d9-afda-43d9-b901-96344886e14d,Python
+Java,java; core java,,http://data.europa.eu/esco/skill/19a8293b-8e95-4de3-983f-77484079c389,Oracle Java
+JavaScript,javascript; js; es6; ecmascript,,http://data.europa.eu/esco/skill/3cd569a2-4f88-4c1e-9995-8dce8c5e51a7,JavaScript
+TypeScript,typescript,,http://data.europa.eu/esco/skill/867137fb-ff1b-4ca3-99f3-cb6969aa2c68,TypeScript
+C#,c#; c sharp; csharp,,http://data.europa.eu/esco/skill/4c016b68-4116-468c-9dc6-42710c239e4a,C#
+C++,c++; cpp,,http://data.europa.eu/esco/skill/b633eb55-8f1f-4ae6-ab4c-2022ffe2cb7f,C++
+C,c programming; c language,C,,C
+Go,golang; go language,Go,,Go
+PHP,php,,http://data.europa.eu/esco/skill/4350c38d-0fe9-4ca7-bab9-40ed7f72b04f,PHP
+Ruby,ruby,,http://data.europa.eu/esco/skill/0ccdfe98-f845-4598-84a1-3dca66e9d9a3,Ruby
+Kotlin,kotlin,,,Kotlin
+Swift,swiftui; swift programming,Swift,http://data.europa.eu/esco/skill/be80acfc-b6f2-4411-9b8d-b19d9cd2556a,Swift
+Dart,,Dart,,
+Objective-C,objective-c; objective c,,http://data.europa.eu/esco/skill/9973a5a2-7822-4161-99e9-95c781eb63f8,Objective C
+Scala,scala,,http://data.europa.eu/esco/skill/ffddfc7c-a9dd-449f-9e96-882dc447c8b6,Scala
+R,r programming; rstudio; r language,R,http://data.europa.eu/esco/skill/51586df8-1c46-4b47-8583-773cb63bf00b,R
+MATLAB,matlab,,http://data.europa.eu/esco/skill/c3a03c5a-c260-4c26-9b9a-873abb396f4d,The MathWorks MATLAB
+SQL,sql,,http://data.europa.eu/esco/skill/598de5b0-5b58-4ea7-8058-a4bc4d18c742,Structured query language SQL
+PL/SQL,pl/sql; plsql,,,Oracle PL/SQL
+T-SQL,t-sql; tsql; transact-sql,,,Microsoft transact-structural query language T-SQL
+Bash,bash; shell scripting; shell script; unix shell,,,Bash
+PowerShell,powershell,,,Microsoft PowerShell
+VBA,vba; excel macros,,,Microsoft Visual Basic for Applications VBA
+ABAP,abap,,http://data.europa.eu/esco/skill/eb0e5615-1575-4a86-a1a2-7d39595033c5,Advanced business application programming ABAP
+COBOL,cobol,,http://data.europa.eu/esco/skill/def007fa-5fed-4a5f-91a2-b0d7e3db1be1,Common business oriented language COBOL
+Perl,perl,,http://data.europa.eu/esco/skill/401eb8d8-6daa-4f8b-90ad-60afc71eb4f8,Perl
+HTML,html; html5,,,Hypertext markup language HTML
+CSS,css; css3,,http://data.europa.eu/esco/skill/e5d1f825-60ed-4bdd-872a-e748c387f777,Cascading style sheets CSS
+Sass,sass; scss,,http://data.europa.eu/esco/skill/1110c92f-3059-445a-9436-0f4200d365f5,Syntactically awesome style sheets SASS
+Tailwind CSS,tailwind; tailwindcss; tailwind css,,,
+Bootstrap,bootstrap,,,Bootstrap
+jQuery,jquery,,,jQuery
+React,react; reactjs; react.js,,,React
+Next.js,next.js; nextjs,,,
+Angular,angular; angularjs; angular.js,,http://data.europa.eu/esco/skill/1ffac4ac-fda7-407d-8ed1-ca8f4a8dc146,Google Angular
+Vue.js,vue; vue.js; vuejs; vue 3; nuxt,,,Vue.js
+Redux,redux,,,
+Webpack,webpack,,,webpack
+Responsive web design,responsive design; responsive web design; responsive web,,,
+Node.js,node.js; nodejs; node js,,,Node.js
+Express.js,express.js; expressjs,,,
+NestJS,nestjs; nest.js,,,
+Django,django,,,Django
+Flask,flask,,,Flask
+FastAPI,fastapi,,,
+Spring Boot,spring boot; springboot,,,Spring Boot
+Spring Framework,spring framework; spring mvc,Spring,,Spring Framework
+Hibernate,hibernate,,,Hibernate ORM
+Laravel,laravel,,,
+CodeIgniter,codeigniter,,,
+Ruby on Rails,ruby on rails,,,Ruby on Rails
+.NET,.net; dotnet; .net core; .net framework; vb.net,,,Microsoft .NET Framework
+ASP.NET,asp.net; asp.net core; asp.net mvc,,http://data.europa.eu/esco/skill/56a7f561-1d55-43c9-9cd7-36a0a9bc6c50,Microsoft ASP.NET
+REST API,rest api; rest apis; restful; restful api; restful apis; restful web services,REST,,RESTful API
+GraphQL,graphql,,,GraphQL
+SOAP,soap web services,SOAP,,
+Microservices,microservices; micro-services; microservice,,,
+JSON,json,,,JavaScript Object Notation JSON
+XML,xml,,,Extensible markup language XML
+J2EE,j2ee; java ee; jakarta ee,,,Oracle Java 2 Platform Enterprise Edition J2EE
+JSP,jsp,,,Oracle JavaServer Pages JSP
+WordPress,wordpress,,http://data.europa.eu/esco/skill/6d289e8b-2cc1-4eda-ab1f-ad1090ef98f0,WordPress
+Android,android,,http://data.europa.eu/esco/skill/d8829a1d-dbde-435b-b921-29d6462f35c9,Google Android
+iOS,ios,,http://data.europa.eu/esco/skill/ce26e71f-2d47-474e-89b6-7920931ac4fc,Apple iOS
+Flutter,flutter,,,
+React Native,react native; react-native,,,React Native
+Xcode,xcode,,http://data.europa.eu/esco/skill/449d119b-2d66-43a9-9230-7d27f16afbb6,Xcode
+Firebase,firebase,,,
+MySQL,mysql,,http://data.europa.eu/esco/skill/4da171e5-779c-4983-a76f-91c16751e99f,MySQL
+PostgreSQL,postgresql; postgres,,http://data.europa.eu/esco/skill/a8d07b5a-c1a1-42c6-9d53-db9c7a2ca996,PostgreSQL
+Microsoft SQL Server,sql server; mssql; ms sql,,http://data.europa.eu/esco/skill/c062bab3-3ea0-4291-9220-a2d8fef4bead,Microsoft SQL Server
+Oracle Database,oracle database; oracle db; oracle sql,,,Oracle Database
+MongoDB,mongodb; mongo db,,,MongoDB
+Redis,redis,,,Redis
+NoSQL,nosql,,http://data.europa.eu/esco/skill/76ef6ed3-1658-4a1a-9593-204d799c6d0c,NoSQL
+MariaDB,mariadb,,,MariaDB
+SQLite,sqlite,,,
+DB2,db2,,http://data.europa.eu/esco/skill/3cee858e-79e8-4a4b-b99f-93c7f735d58b,IBM DB2
+Elasticsearch,elasticsearch; elastic search; elk stack; elk,,,Elasticsearch
+DynamoDB,dynamodb,,,Amazon DynamoDB
+Relational databases,relational database; relational databases; rdbms,,,Relational database software
+Database design,database design; data modeling; data modelling; data models; erd,,http://data.europa.eu/esco/skill/fecf8a0d-62c4-4e71-9b03-0f4fc2ad7bf5,Database design software
+ETL,"etl; elt; extract, transform, load; extract transform load",,http://data.europa.eu/esco/skill/9d0d89be-bffa-4393-b6f6-8d05bea49051,
+Data pipelines,data pipeline; data pipelines,,,
+Data warehousing,data warehouse; data warehousing; data warehouses; data lake; data lakehouse,,http://data.europa.eu/esco/skill/3ec2e4d6-7000-4905-bf1a-c5b1679416de,Data warehouse software
+Apache Spark,spark; pyspark; apache spark; spark sql,,http://data.europa.eu/esco/skill/af7ae54f-4649-4c16-87c7-59ba41d4d57f,Apache Spark
+Hadoop,hadoop; hdfs,,http://data.europa.eu/esco/skill/e46291c7-52b9-4174-bd59-178884861038,Apache Hadoop
+Hive,apache hive,Hive,,Apache Hive
+Apache Kafka,kafka,,,Apache Kafka
+Apache Airflow,airflow,,,Apache Airflow
+Databricks,databricks,,,
+Snowflake,snowflake,,,Snowflake
+BigQuery,bigquery,,,BigQuery
+Amazon Redshift,redshift,,,Amazon Redshift
+Azure Data Factory,azure data factory; adf,,,Microsoft Azure Data Factory
+Informatica,informatica,,,Informatica software
+SSIS,ssis; sql server integration services,,http://data.europa.eu/esco/skill/6f7512ab-d46d-402a-8c30-a8878d7c1f88,Microsoft SQL Server Integration Services SSIS
+SSRS,ssrs; sql server reporting services,,,Microsoft SQL Server Reporting Services SSRS
+Teradata,teradata,,http://data.europa.eu/esco/skill/d9eaf831-9348-4330-a83e-b7c099cdc8f6,Teradata Database
+Power BI,power bi; powerbi; power bi desktop; dax,,,Microsoft Power BI
+Tableau,tableau,,,Tableau
+Looker,looker; looker studio; google data studio,,,
+Qlik,qlik; qlikview; qlik sense; qliksense,,,Qlik software
+Microsoft Excel,ms excel; microsoft excel; advanced excel; excel vba; pivot table; pivot tables,Excel,http://data.europa.eu/esco/skill/1973c966-f236-40c9-b2d4-5d71a89019be,Microsoft Excel
+Data analysis,data analysis; data analytics; analyse data; analyze data,,http://data.europa.eu/esco/skill/97bd1c21-66b2-4b7e-ad0f-e3cda590e378,Data analysis software
+Data visualisation,data visualization; data visualisation; data visualizations; visualization tools,,,Data visualization software
+Statistics,statistics; statistical analysis; statistical modelling; statistical modeling; statistical methods,,http://data.europa.eu/esco/skill/7ee4c2ea-b349-4bd2-81a3-ec31475d4833,
+Data mining,data mining,,http://data.europa.eu/esco/skill/25f0ea33-b4a2-4f31-b7b4-7d20e827b180,
+Business intelligence,business intelligence; bi tools; bi reporting; bi solutions; bi dashboards; bi development,,http://data.europa.eu/esco/skill/143769cb-b61e-47d8-a61e-eedfbec1016c,Business intelligence software
+Pandas,pandas,,,pandas
+NumPy,numpy,,,NumPy
+SAS,,SAS,,SAS
+Google Analytics,google analytics,,,Google Analytics
+Machine learning,machine learning; ml models; ml model,ML,http://data.europa.eu/esco/skill/3a2d5b45-56e4-4f5a-a55a-4a4a65afdc43,
+Deep learning,deep learning; neural network; neural networks,,http://data.europa.eu/esco/skill/ecc4552a-92c5-4222-b18d-faf5ac841080,
+Natural language processing,natural language processing; nlp,,http://data.europa.eu/esco/skill/fff0e2cd-d0bd-4b02-9daf-158b79d9688a,
+Computer vision,computer vision; image processing; opencv,,http://data.europa.eu/esco/skill/7b0d5000-00da-4864-b776-6de49a87a669,
+Generative AI,generative ai; genai; gen ai,,,
+Large language models,llm; llms; large language model; large language models; gpt; chatgpt; openai; prompt engineering,,,OpenAI ChatGPT
+RAG,retrieval-augmented generation; retrieval augmented generation,RAG,,
+Hugging Face,hugging face; huggingface; transformers library,,,Hugging Face
+TensorFlow,tensorflow,,,TensorFlow
+PyTorch,pytorch,,,PyTorch
+Keras,keras,,,Keras
+scikit-learn,scikit-learn; sklearn; scikit learn,,,Scikit-learn
+MLOps,mlops; ml ops,,,
+MLflow,mlflow,,,Mlflow
+Data science,data science,,http://data.europa.eu/esco/skill/edebd83d-35f6-4ed5-a940-6c203d178c01,
+AWS,aws; amazon web services; ec2; amazon ec2; s3; amazon s3; aws lambda; rds; amazon rds; vpc,,,Amazon Web Services AWS software
+Microsoft Azure,azure; microsoft azure,,,Microsoft Azure software
+Google Cloud,gcp; google cloud; google cloud platform,,,Google Cloud software
+Alibaba Cloud,alibaba cloud,,,
+Huawei Cloud,huawei cloud,,,
+Serverless,serverless,,,
+Cloud computing,cloud computing; cloud services; cloud platforms; cloud platform; cloud infrastructure,,http://data.europa.eu/esco/skill/bd14968e-e409-45af-b362-3495ed7b10e0,
+Docker,docker; containerization; containerisation,,,Docker
+Kubernetes,kubernetes; k8s; eks; aks; gke,,,Kubernetes
+OpenShift,openshift,,,Red Hat OpenShift
+Helm,,Helm,,
+Terraform,terraform,,,IBM Terraform
+Ansible,ansible,,http://data.europa.eu/esco/skill/6f8a40d6-f9ce-43ec-a72f-d4213a53f3ed,Ansible software
+Infrastructure as code,infrastructure as code; infrastructure-as-code; iac; cloudformation; aws cdk; pulumi,,,
+CI/CD,ci/cd; cicd; ci / cd; continuous integration; continuous delivery; continuous deployment,,,Continuous integration software
+Jenkins,jenkins,,http://data.europa.eu/esco/skill/f47a1998-0beb-43be-9f46-380aa4d183da,Jenkins CI
+GitHub Actions,github actions,,,
+GitLab CI,gitlab ci; gitlab-ci; gitlab ci/cd,,,
+Argo CD,argocd; argo cd,,,
+Prometheus,prometheus,,,Prometheus
+Grafana,grafana,,,
+Splunk,splunk,,,
+Zabbix,zabbix,,,Zabbix
+Nagios,nagios,,,Nagios
+Monitoring and logging,monitoring tools; observability; logging and monitoring,,,
+Linux,linux; ubuntu; centos; red hat; rhel; redhat,,,Linux
+Unix,unix; aix; solaris,,,UNIX
+Windows Server,windows server; windows servers,,,Microsoft Windows Server
+Active Directory,active directory; azure ad; entra id,,http://data.europa.eu/esco/skill/d1e954cd-d290-4d80-97c0-7969960d2928,Active directory software
+VMware,vmware; vsphere; esxi; vcenter,,,VMware
+Virtualisation,virtualization; virtualisation; hyper-v; hypervisor; kvm,,,
+Git,git,,,Git
+GitHub,github,,,GitHub
+GitLab,gitlab,,,GitLab
+Bitbucket,bitbucket,,,Atlassian Bitbucket
+SVN,svn; subversion,,,Apache Subversion SVN
+Maven,maven,,http://data.europa.eu/esco/skill/0d168770-4d9c-4096-b048-a6577818d306,Apache Maven
+Gradle,gradle,,,Gradle
+Jira,jira,,,Atlassian JIRA
+Confluence,confluence,,,Atlassian Confluence
+Postman,postman,,,Postman
+Visual Studio,visual studio,,,Microsoft Visual Studio
+Software testing,software testing; manual testing; functional testing; test cases; test case; test plans; test scripts,,,Functional testing software
+Test automation,test automation; automation testing; automated testing; automated test,,http://data.europa.eu/esco/skill/7557f0f4-b8bc-4ac0-b91e-222ab1ba744f,
+Unit testing,unit testing; unit test; unit tests,,,Unit testing software
+Integration testing,integration testing; system integration testing,SIT,,Integration testing software
+Regression testing,regression testing,,,Regression testing software
+Performance testing,performance testing; load testing; stress testing,,,Load testing software
+API testing,api testing,,,
+User acceptance testing,user acceptance testing; uat,,,
+Selenium,selenium; selenium webdriver,,,Selenium
+Cypress,cypress,,,
+Appium,appium,,,Appium
+JMeter,jmeter,,,Apache JMeter
+JUnit,junit,,,JUnit
+TestNG,testng,,,TestNG
+Jest,,Jest,,Jest
+Cucumber,cucumber; bdd,,,
+Test-driven development,tdd; test-driven development; test driven development,,,
+Networking,networking; computer networks; network infrastructure; network administration,,,
+TCP/IP,tcp/ip; tcp ip; tcp; osi model; network protocols,,,
+Routing and switching,routing and switching; routers; switches; routing protocols; layer 2; layer 3; vlan; vlans; qos,,,
+LAN/WAN,lan; wan; lan/wan; wlan; wireless network; wifi; wi-fi,,,Local area network LAN software
+VPN,vpn,,,Virtual private networking VPN software
+DNS,dns,,http://data.europa.eu/esco/skill/071233c4-ad2b-4f50-b79f-768d2231163e,Domain name system DNS
+DHCP,dhcp,,,Dynamic host configuration protocol DHCP
+BGP,bgp,,,Border Gateway Protocol BGP
+OSPF,ospf,,,Open Shortest Path First OSPF
+MPLS,mpls,,,Multiprotocol Label Switching MPLS
+SD-WAN,sd-wan; sdwan,,,
+Firewalls,firewall; firewalls; fortigate; palo alto; checkpoint firewall,,,Firewall software
+Load balancing,load balancer; load balancers; load balancing; f5,,,
+Cisco,cisco,,http://data.europa.eu/esco/skill/709ef32a-7435-48e2-8fa2-16e389ecab8a,Cisco IOS
+Juniper,juniper,,,
+Network monitoring,network monitoring; network performance monitoring,,,
+Wireshark,wireshark,,http://data.europa.eu/esco/skill/8fa510d0-a8a6-4932-a361-00f8442cfe23,Wireshark
+VoIP,voip,SIP,,Session Initiation Protocol SIP
+Server administration,server administration; system administration; server maintenance; sysadmin,,,
+Backup and recovery,backups; disaster recovery; backup and recovery; backup solutions; data backup,,,Disaster recovery software
+Storage,storage systems; storage management; storage area network,SAN; NAS,,Storage management software
+IT infrastructure,it infrastructure; infrastructure management,,,
+Cybersecurity,cybersecurity; cyber security; information security; it security; infosec,,http://data.europa.eu/esco/skill/8088750d-8388-4170-a76f-48354c469c44,
+Network security,network security,,,
+Cloud security,cloud security,,http://data.europa.eu/esco/skill/1c2978b8-bb0d-4249-9c23-877571a4dffa,
+Application security,application security; web application security; secure coding; owasp; waf; web application firewall,,http://data.europa.eu/esco/skill/902fb91c-3113-4004-9b4f-79aa86b638b7,
+SIEM,siem; qradar; arcsight,,,IBM QRadar SIEM
+Security operations,security operations; soc operations; security monitoring,,,
+Incident response,incident response; incident handling,,,
+Vulnerability assessment,vulnerability assessment; vulnerability scanning; vulnerability management; vapt; nessus; qualys,,,
+Penetration testing,penetration testing; pentest; pentesting; penetration test; ethical hacking; burp suite; metasploit; kali linux,,,Penetration testing software
+Threat intelligence,threat intelligence; threat hunting; threat detection,,,
+Identity and access management,identity and access management; iam; access control; privileged access management; cyberark,PAM,http://data.europa.eu/esco/skill/33efa504-2f26-424d-b662-cee77e6e9c93,
+Endpoint security,endpoint security; edr; antivirus; endpoint protection; crowdstrike,,,Antivirus software
+IDS/IPS,ids/ips; intrusion detection; intrusion prevention,IDS; IPS,,Intrusion detection system IDS
+Encryption,encryption; cryptography; pki; ssl; tls,,http://data.europa.eu/esco/skill/d32db06e-bd06-4415-a7ab-1b0ee68caa9a,Encryption software
+ISO 27001,iso 27001; iso/iec 27001; iso27001,,,
+NIST,nist,,,
+Security compliance,security compliance; pci dss; pci-dss; gdpr; pdpa,,,
+Digital forensics,digital forensics; forensics,,,
+Figma,figma,,,Figma
+Adobe XD,adobe xd,,,Adobe XD
+Sketch,,Sketch,,
+Adobe Photoshop,photoshop,,http://data.europa.eu/esco/skill/14ced458-5f4b-495f-bd3d-9c240614bda0,Adobe Photoshop
+Adobe Illustrator,illustrator,,http://data.europa.eu/esco/skill/27b913f0-3c52-448b-ad27-fc6ef08fb326,Adobe Illustrator
+InVision,invision,,,InVision software
+Axure,axure,,,Axure RP
+Wireframing,wireframe; wireframes; wireframing,,,
+Prototyping,prototypes; prototyping; mockups; mock-ups; interactive prototypes,,,
+User research,user research; user interviews; usability studies; personas; user personas,,,
+Usability testing,usability testing; usability test; a/b testing,,,Usability testing software
+UI design,ui design; user interface design; visual design; interface design,,,
+UX design,ux design; ui/ux design; ux/ui design; user experience design; ux research; ui/ux; ux,,,
+Interaction design,interaction design,,http://data.europa.eu/esco/skill/de0be6e8-644c-4cc9-9c8d-925dd98dda56,
+Design systems,design system; design systems,,,
+Agile,agile; agile methodology; agile methodologies,,http://data.europa.eu/esco/skill/dba46f87-0831-49cd-a1c7-340a653c0221,
+Scrum,scrum,,,
+Kanban,kanban,,,
+SDLC,sdlc; software development life cycle; software development lifecycle,,,
+Object-oriented programming,oop; object-oriented; object oriented; object-oriented programming; ood; object oriented design,,,
+Data structures and algorithms,data structures; data structures and algorithms; algorithm design,,,
+Design patterns,design patterns; design pattern; solid principles,,,
+System design,system design; software architecture; system architecture,,http://data.europa.eu/esco/skill/fae27053-8924-4bfd-b565-c9fe502044c9,
+UML,uml; unified modeling language; unified modelling language,,http://data.europa.eu/esco/skill/7193cb6d-8334-494f-86e5-21e6d03a47c3,Unified modeling language UML
+BPMN,bpmn; process mapping; process modelling; process modeling,,http://data.europa.eu/esco/skill/98301d4a-2cc3-439d-8d7f-0b6ac76302bb,
+Requirements analysis,requirements gathering; requirement gathering; requirements analysis; requirement analysis; requirements elicitation; business requirements,,,Requirements analysis software
+User stories,user stories; user story,,,
+Business process analysis,business process analysis; business process management; business process improvement; business process re-engineering; business process modelling; process improvement; gap analysis,,,Business process management BPM software
+Technical documentation,technical documentation; technical documents; functional specifications; functional specification; brd; frd,,,
+SAP,sap; sap erp; sap s/4hana; s/4hana; sap hana; hana,,,SAP ERP
+Salesforce,salesforce,,,Salesforce software
+ServiceNow,servicenow,,,ServiceNow
+Microsoft Dynamics 365,dynamics 365; microsoft dynamics; d365,,,Microsoft Dynamics
+Power Platform,power platform; power apps; powerapps; power automate,,,Microsoft Power Platform software
+SharePoint,sharepoint,,,Microsoft SharePoint
+ERP systems,erp,,,NetSuite ERP
+CRM systems,crm,,,
+RPA,rpa; uipath; robotic process automation; blue prism; automation anywhere,,,
+DevOps practices,devops; devsecops; site reliability engineering,SRE,http://data.europa.eu/esco/skill/f0de4973-0a70-4644-8fd4-3a97080476f4,
+APIs,api; apis; api integration; api development; web api; web apis,,,RESTful API
+MVC,mvc; model-view-controller; mvvm,,,Microsoft ASP.NET Core MVC
+ORM,orm; entity framework; sequelize; prisma; typeorm,,,Hibernate ORM
+AJAX,ajax,,http://data.europa.eu/esco/skill/b4dc6e4f-dc7d-445f-8ce2-d7b9d225e282,AJAX
+Web servers,nginx; apache http server; apache server; tomcat; iis; web server; web servers,,,Apache HTTP Server
+Message queues,rabbitmq; activemq; ibm mq; message queue; message queues; message broker; message brokers; amazon sqs,MQ,,RabbitMQ
+Authentication and authorisation,oauth; oauth2; oauth 2.0; jwt; single sign-on; sso; saml; openid connect,,,Single sign-on SSO
+Azure DevOps,azure devops; tfs; team foundation server,,,Microsoft Team Foundation Server
+ITIL,itil; it service management; itsm,,,
+SEO,seo; search engine optimisation; search engine optimization,,http://data.europa.eu/esco/skill/eda4d727-4374-49af-ace4-118c7c906835,
+IBM i (AS/400),as400; as/400; iseries; ibm i,RPG,,
+IoT,iot; internet of things,,http://data.europa.eu/esco/skill/f049d050-12da-4e40-813a-2b5eb6df6b51,
+Blockchain,blockchain,,http://data.europa.eu/esco/skill/afa14e38-5973-4cce-a077-f796c1ced2cc,
+Embedded systems,embedded systems; embedded software; embedded c; firmware development; microcontroller; microcontrollers,,http://data.europa.eu/esco/skill/2180bd8c-86de-4889-8165-adac902eee9d,
+Unity,unity3d,Unity,http://data.europa.eu/esco/skill/d1a86399-24d8-415f-98b9-e8cbb6b04a26,
