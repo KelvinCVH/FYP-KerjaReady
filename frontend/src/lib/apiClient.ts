@@ -17,6 +17,11 @@ export class ApiError extends Error {
   }
 }
 
+// The message to show for a failed API call: the API's own message, or the generic one
+export function getApiErrorMessage(error: unknown) {
+  return error instanceof ApiError ? error.message : GENERIC_ERROR_MESSAGE;
+}
+
 type Method = "GET" | "POST" | "PUT" | "DELETE";
 
 async function getAccessToken() {

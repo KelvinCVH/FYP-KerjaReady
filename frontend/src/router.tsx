@@ -22,6 +22,7 @@ import SkillGapPage from "./pages/candidate/SkillGapPage";
 import RoadmapPage from "./pages/candidate/RoadmapPage";
 import JobsPage from "./pages/candidate/JobsPage";
 import CandidateApplicationsPage from "./pages/candidate/CandidateApplicationsPage";
+import CandidateProfilePage from "./pages/candidate/CandidateProfilePage";
 
 import RecruiterDashboardPage from "./pages/recruiter/RecruiterDashboardPage";
 import ListingsPage from "./pages/recruiter/ListingsPage";
@@ -36,6 +37,7 @@ const candidateNavItems: NavItem[] = [
   { label: "Roadmap", to: "/candidate/roadmap" },
   { label: "Jobs", to: "/candidate/jobs" },
   { label: "Applications", to: "/candidate/applications" },
+  { label: "Profile", to: "/candidate/profile" },
 ];
 
 const recruiterNavItems: NavItem[] = [
@@ -78,6 +80,7 @@ export const router = createBrowserRouter([
       { path: "jobs", element: <JobsPage /> },
       { path: "jobs/:listingId", element: <JobsPage /> },
       { path: "applications", element: <CandidateApplicationsPage /> },
+      { path: "profile", element: <CandidateProfilePage /> },
     ],
   },
   {

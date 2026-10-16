@@ -354,6 +354,36 @@ class KerjaReadyStack(Stack):
                 integration=profile_integration,
             )
 
+        # Signed-in: KB roles for the role picker
+        list_roles_function = self._create_python_function(
+            "ListRolesFunction",
+            "list-roles",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(list_roles_function)
+        self.http_api.add_routes(
+            path="/roles",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration("ListRolesIntegration", list_roles_function),
+        )
+
+        # Candidate: save or clear the target role
+        save_target_role_function = self._create_python_function(
+            "SaveTargetRoleFunction",
+            "save-target-role",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(save_target_role_function)
+        self.http_api.add_routes(
+            path="/candidate/target-role",
+            methods=[apigwv2.HttpMethod.PUT],
+            integration=apigwv2_integrations.HttpLambdaIntegration("SaveTargetRoleIntegration", save_target_role_function),
+        )
+
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",
