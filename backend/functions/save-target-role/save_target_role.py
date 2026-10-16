@@ -47,5 +47,5 @@ def handler(event, user):
         [role_parameter, {"name": "user_id", "value": {"stringValue": user["user_id"]}}],
     )
     if not updated:
-        return 404, {"message": "We couldn't find your account"}
+        return 404, {"message": "We couldn't find your account."}
     return 200, {"target_role": role}
