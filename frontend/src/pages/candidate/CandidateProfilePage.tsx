@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { CircleCheck } from "lucide-react";
 import AccountDetailsCard from "@/components/profile/AccountDetailsCard";
@@ -6,26 +6,21 @@ import ProfileLoadError from "@/components/profile/ProfileLoadError";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import RolePickerDialog from "@/components/profile/RolePickerDialog";
 import TargetRoleCard from "@/components/profile/TargetRoleCard";
+import { useApiData } from "@/hooks/useApiData";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { ApiError, getApiErrorMessage } from "@/lib/apiClient";
-import {
-  getCandidateProfile,
-  getRoles,
-  saveTargetRole,
-  type CandidateProfile,
-  type Role,
-} from "@/lib/candidateProfileApi";
+import { getApiErrorMessage } from "@/lib/apiClient";
+import { getCandidateProfile, getRoles, saveTargetRole, type Role } from "@/lib/profileApi";
 
-type PageState =
-  | { status: "loading" }
-  | { status: "error"; httpStatus: number; message: string }
-  | { status: "ready"; profile: CandidateProfile; roles: Role[] };
+// The profile and the role list load together; the page waits for both
+async function loadProfileAndRoles() {
+  const [profile, roles] = await Promise.all([getCandidateProfile(), getRoles()]);
+  return { profile, roles };
+}
 
 export default function CandidateProfilePage() {
   usePageTitle("Profile | KerjaReady");
 
-  const [page, setPage] = useState<PageState>({ status: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
+  const { state: page, retry, setData } = useApiData(loadProfileAndRoles);
   // Success message under the header, cleared by the next action
   const [notice, setNotice] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -35,33 +30,8 @@ export default function CandidateProfilePage() {
   // Choose Target Role or Change Target Role, whichever is showing
   const roleActionRef = useRef<HTMLButtonElement>(null);
 
-  // The profile and the role list load together; the page waits for both
-  useEffect(() => {
-    let active = true;
-    Promise.all([getCandidateProfile(), getRoles()]).then(
-      ([profile, roles]) => {
-        if (active) setPage({ status: "ready", profile, roles });
-      },
-      (error: unknown) => {
-        if (!active) return;
-        const httpStatus = error instanceof ApiError ? error.status : 0;
-        setPage({ status: "error", httpStatus, message: getApiErrorMessage(error) });
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [reloadKey]);
-
-  function retry() {
-    setPage({ status: "loading" });
-    setReloadKey((key) => key + 1);
-  }
-
   function setTargetRole(targetRole: Role | null) {
-    setPage((current) =>
-      current.status === "ready" ? { ...current, profile: { ...current.profile, target_role: targetRole } } : current,
-    );
+    setData((data) => ({ ...data, profile: { ...data.profile, target_role: targetRole } }));
   }
 
   function openPicker() {
@@ -120,21 +90,21 @@ export default function CandidateProfilePage() {
       </div>
 
       <div className="mt-6">
-        {page.status === "loading" && <ProfileSkeleton />}
+        {page.status === "loading" && <ProfileSkeleton accountType="candidate" />}
         {page.status === "error" && (
           <ProfileLoadError status={page.httpStatus} message={page.message} onRetry={retry} />
         )}
         {page.status === "ready" && (
           <div className="space-y-6">
             <TargetRoleCard
-              targetRole={page.profile.target_role}
+              targetRole={page.data.profile.target_role}
               clearing={clearing}
               clearError={clearError}
               onChoose={openPicker}
               onClear={clearTargetRole}
               actionRef={roleActionRef}
             />
-            <AccountDetailsCard profile={page.profile} />
+            <AccountDetailsCard profile={page.data.profile} />
           </div>
         )}
       </div>
@@ -144,8 +114,8 @@ export default function CandidateProfilePage() {
           key={pickerKey}
           open={pickerOpen}
           onOpenChange={setPickerOpen}
-          roles={page.roles}
-          savedRole={page.profile.target_role}
+          roles={page.data.roles}
+          savedRole={page.data.profile.target_role}
           onSaved={handleSaved}
           onCloseAutoFocus={focusRoleAction}
         />

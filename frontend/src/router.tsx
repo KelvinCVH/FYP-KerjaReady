@@ -29,6 +29,7 @@ import ListingsPage from "./pages/recruiter/ListingsPage";
 import CreateListingPage from "./pages/recruiter/CreateListingPage";
 import ListingApplicantsPage from "./pages/recruiter/ListingApplicantsPage";
 import EditListingPage from "./pages/recruiter/EditListingPage";
+import RecruiterProfilePage from "./pages/recruiter/RecruiterProfilePage";
 
 const candidateNavItems: NavItem[] = [
   { label: "Dashboard", to: "/candidate/dashboard" },
@@ -43,6 +44,7 @@ const candidateNavItems: NavItem[] = [
 const recruiterNavItems: NavItem[] = [
   { label: "Dashboard", to: "/recruiter/dashboard" },
   { label: "Listings", to: "/recruiter/listings" },
+  { label: "Profile", to: "/recruiter/profile" },
 ];
 
 export const router = createBrowserRouter([
@@ -97,6 +99,7 @@ export const router = createBrowserRouter([
       { path: "listings/new", element: <CreateListingPage /> },
       { path: "listings/:listingId", element: <ListingApplicantsPage /> },
       { path: "listings/:listingId/edit", element: <EditListingPage /> },
+      { path: "profile", element: <RecruiterProfilePage /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

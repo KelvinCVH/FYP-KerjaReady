@@ -10,9 +10,21 @@ export type CandidateProfile = {
   target_role: Role | null;
 };
 
+export type RecruiterProfile = {
+  email: string;
+  full_name: string;
+  account_type: "recruiter";
+  company_name: string | null;
+};
+
 // The signed-in candidate's account details and saved target role
 export function getCandidateProfile() {
   return apiGet<CandidateProfile>("/candidate/profile");
+}
+
+// The signed-in recruiter's account details, including their company
+export function getRecruiterProfile() {
+  return apiGet<RecruiterProfile>("/recruiter/profile");
 }
 
 // Every role in the knowledge base, sorted by title

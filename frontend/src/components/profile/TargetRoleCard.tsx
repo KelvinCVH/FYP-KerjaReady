@@ -3,7 +3,7 @@ import { Target } from "lucide-react";
 import FormAlert from "@/components/auth/FormAlert";
 import LoadingButton from "@/components/LoadingButton";
 import { Button } from "@/components/ui/button";
-import type { Role } from "@/lib/candidateProfileApi";
+import type { Role } from "@/lib/profileApi";
 import { profileCard, sectionIconTile } from "./styles";
 
 type TargetRoleCardProps = {

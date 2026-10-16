@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getApiErrorMessage } from "@/lib/apiClient";
-import { saveTargetRole, type Role } from "@/lib/candidateProfileApi";
+import { saveTargetRole, type Role } from "@/lib/profileApi";
 import { sectionIconTile } from "./styles";
 
 type RolePickerDialogProps = {
