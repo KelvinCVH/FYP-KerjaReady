@@ -1,0 +1,210 @@
+{
+  "gold": "data\\gold_calibration_labelled.csv",
+  "llm": "labels\\cal_sonnet46_p5.jsonl",
+  "gold_rows": 30,
+  "llm_rows": 30,
+  "matched": 30,
+  "missing_from_llm": [],
+  "model_id": "global.anthropic.claude-sonnet-4-6",
+  "guide_version": "v1.4",
+  "prompt_version": "p5",
+  "out_of_scope": {
+    "agree": 30,
+    "gold_only": [],
+    "llm_only": []
+  },
+  "criteria": {
+    "a1": {
+      "n": 29,
+      "qwk": 0.613,
+      "meets_qwk_target": true,
+      "gwet_ac2": 0.977,
+      "exact": 0.862,
+      "within_1": 1.0,
+      "gold_distribution": {
+        "0": 0,
+        "1": 5,
+        "2": 23,
+        "3": 1
+      },
+      "llm_distribution": {
+        "0": 0,
+        "1": 6,
+        "2": 23,
+        "3": 0
+      },
+      "gold_skewed": true,
+      "confusion_gold_rows_llm_cols": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          1,
+          0
+        ],
+        [
+          0,
+          2,
+          21,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    "a2": {
+      "n": 29,
+      "qwk": 0.844,
+      "meets_qwk_target": true,
+      "gwet_ac2": 0.969,
+      "exact": 0.862,
+      "within_1": 1.0,
+      "gold_distribution": {
+        "0": 13,
+        "1": 15,
+        "2": 0,
+        "3": 1
+      },
+      "llm_distribution": {
+        "0": 13,
+        "1": 15,
+        "2": 0,
+        "3": 1
+      },
+      "gold_skewed": false,
+      "confusion_gold_rows_llm_cols": [
+        [
+          11,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          13,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "a3": {
+      "n": 29,
+      "qwk": 0.861,
+      "meets_qwk_target": true,
+      "gwet_ac2": 0.988,
+      "exact": 0.931,
+      "within_1": 1.0,
+      "gold_distribution": {
+        "0": 0,
+        "1": 5,
+        "2": 23,
+        "3": 1
+      },
+      "llm_distribution": {
+        "0": 1,
+        "1": 5,
+        "2": 22,
+        "3": 1
+      },
+      "gold_skewed": true,
+      "confusion_gold_rows_llm_cols": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          4,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          22,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "b2": {
+      "n": 29,
+      "qwk": 0.121,
+      "meets_qwk_target": false,
+      "gwet_ac2": 0.948,
+      "exact": 0.759,
+      "within_1": 0.966,
+      "gold_distribution": {
+        "0": 0,
+        "1": 28,
+        "2": 1,
+        "3": 0
+      },
+      "llm_distribution": {
+        "0": 0,
+        "1": 21,
+        "2": 7,
+        "3": 1
+      },
+      "gold_skewed": true,
+      "confusion_gold_rows_llm_cols": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          21,
+          6,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "entries": {
+    "n": 30,
+    "exact": 0.933
+  }
+}
