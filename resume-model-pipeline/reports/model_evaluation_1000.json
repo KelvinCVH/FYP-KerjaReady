@@ -1,0 +1,582 @@
+{
+  "model_dir": "models\\kerjaready-rating-model-20261111-090335",
+  "best_epoch": 3,
+  "checkpoint": "distilbert-base-uncased",
+  "max_chunks": 8,
+  "splits": {
+    "val": {
+      "a1": {
+        "model": {
+          "n": 144,
+          "qwk": 0.518,
+          "macro_f1": 0.757,
+          "exact": 0.854,
+          "gold_counts": [
+            0,
+            31,
+            113,
+            0
+          ],
+          "pred_counts": [
+            0,
+            22,
+            122,
+            0
+          ]
+        },
+        "baseline": {
+          "level": 2,
+          "n": 144,
+          "qwk": 0.0,
+          "macro_f1": 0.44,
+          "exact": 0.785,
+          "gold_counts": [
+            0,
+            31,
+            113,
+            0
+          ],
+          "pred_counts": [
+            0,
+            0,
+            144,
+            0
+          ]
+        },
+        "per_level": {
+          "0": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "1": {
+            "gold": 31,
+            "predicted": 22,
+            "precision": 0.727,
+            "recall": 0.516,
+            "f1": 0.604
+          },
+          "2": {
+            "gold": 113,
+            "predicted": 122,
+            "precision": 0.877,
+            "recall": 0.947,
+            "f1": 0.911
+          },
+          "3": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          }
+        },
+        "confusion_gold_rows_pred_cols": [
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            16,
+            15,
+            0
+          ],
+          [
+            0,
+            6,
+            107,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "a2": {
+        "model": {
+          "n": 144,
+          "qwk": 0.366,
+          "macro_f1": 0.452,
+          "exact": 0.688,
+          "gold_counts": [
+            67,
+            75,
+            0,
+            2
+          ],
+          "pred_counts": [
+            44,
+            100,
+            0,
+            0
+          ]
+        },
+        "baseline": {
+          "level": 1,
+          "n": 144,
+          "qwk": 0.0,
+          "macro_f1": 0.228,
+          "exact": 0.521,
+          "gold_counts": [
+            67,
+            75,
+            0,
+            2
+          ],
+          "pred_counts": [
+            0,
+            144,
+            0,
+            0
+          ]
+        },
+        "per_level": {
+          "0": {
+            "gold": 67,
+            "predicted": 44,
+            "precision": 0.773,
+            "recall": 0.507,
+            "f1": 0.613
+          },
+          "1": {
+            "gold": 75,
+            "predicted": 100,
+            "precision": 0.65,
+            "recall": 0.867,
+            "f1": 0.743
+          },
+          "2": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "3": {
+            "gold": 2,
+            "predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          }
+        },
+        "confusion_gold_rows_pred_cols": [
+          [
+            34,
+            33,
+            0,
+            0
+          ],
+          [
+            10,
+            65,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0,
+            0
+          ]
+        ]
+      },
+      "a3": {
+        "model": {
+          "n": 144,
+          "qwk": 0.464,
+          "macro_f1": 0.368,
+          "exact": 0.799,
+          "gold_counts": [
+            2,
+            26,
+            112,
+            4
+          ],
+          "pred_counts": [
+            0,
+            34,
+            110,
+            0
+          ]
+        },
+        "baseline": {
+          "level": 2,
+          "n": 144,
+          "qwk": -0.0,
+          "macro_f1": 0.219,
+          "exact": 0.778,
+          "gold_counts": [
+            2,
+            26,
+            112,
+            4
+          ],
+          "pred_counts": [
+            0,
+            0,
+            144,
+            0
+          ]
+        },
+        "per_level": {
+          "0": {
+            "gold": 2,
+            "predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "1": {
+            "gold": 26,
+            "predicted": 34,
+            "precision": 0.529,
+            "recall": 0.692,
+            "f1": 0.6
+          },
+          "2": {
+            "gold": 112,
+            "predicted": 110,
+            "precision": 0.882,
+            "recall": 0.866,
+            "f1": 0.874
+          },
+          "3": {
+            "gold": 4,
+            "predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          }
+        },
+        "confusion_gold_rows_pred_cols": [
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            18,
+            8,
+            0
+          ],
+          [
+            0,
+            15,
+            97,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            0
+          ]
+        ]
+      }
+    },
+    "test": {
+      "a1": {
+        "model": {
+          "n": 96,
+          "qwk": 0.634,
+          "macro_f1": 0.817,
+          "exact": 0.875,
+          "gold_counts": [
+            0,
+            21,
+            75,
+            0
+          ],
+          "pred_counts": [
+            0,
+            21,
+            75,
+            0
+          ]
+        },
+        "baseline": {
+          "level": 2,
+          "n": 96,
+          "qwk": 0.0,
+          "macro_f1": 0.439,
+          "exact": 0.781,
+          "gold_counts": [
+            0,
+            21,
+            75,
+            0
+          ],
+          "pred_counts": [
+            0,
+            0,
+            96,
+            0
+          ]
+        },
+        "per_level": {
+          "0": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "1": {
+            "gold": 21,
+            "predicted": 21,
+            "precision": 0.714,
+            "recall": 0.714,
+            "f1": 0.714
+          },
+          "2": {
+            "gold": 75,
+            "predicted": 75,
+            "precision": 0.92,
+            "recall": 0.92,
+            "f1": 0.92
+          },
+          "3": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          }
+        },
+        "confusion_gold_rows_pred_cols": [
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            15,
+            6,
+            0
+          ],
+          [
+            0,
+            6,
+            69,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "a2": {
+        "model": {
+          "n": 96,
+          "qwk": 0.251,
+          "macro_f1": 0.624,
+          "exact": 0.635,
+          "gold_counts": [
+            36,
+            60,
+            0,
+            0
+          ],
+          "pred_counts": [
+            43,
+            53,
+            0,
+            0
+          ]
+        },
+        "baseline": {
+          "level": 1,
+          "n": 96,
+          "qwk": 0.0,
+          "macro_f1": 0.385,
+          "exact": 0.625,
+          "gold_counts": [
+            36,
+            60,
+            0,
+            0
+          ],
+          "pred_counts": [
+            0,
+            96,
+            0,
+            0
+          ]
+        },
+        "per_level": {
+          "0": {
+            "gold": 36,
+            "predicted": 43,
+            "precision": 0.512,
+            "recall": 0.611,
+            "f1": 0.557
+          },
+          "1": {
+            "gold": 60,
+            "predicted": 53,
+            "precision": 0.736,
+            "recall": 0.65,
+            "f1": 0.69
+          },
+          "2": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "3": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          }
+        },
+        "confusion_gold_rows_pred_cols": [
+          [
+            22,
+            14,
+            0,
+            0
+          ],
+          [
+            21,
+            39,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "a3": {
+        "model": {
+          "n": 96,
+          "qwk": 0.411,
+          "macro_f1": 0.462,
+          "exact": 0.74,
+          "gold_counts": [
+            0,
+            21,
+            74,
+            1
+          ],
+          "pred_counts": [
+            0,
+            35,
+            61,
+            0
+          ]
+        },
+        "baseline": {
+          "level": 2,
+          "n": 96,
+          "qwk": -0.0,
+          "macro_f1": 0.29,
+          "exact": 0.771,
+          "gold_counts": [
+            0,
+            21,
+            74,
+            1
+          ],
+          "pred_counts": [
+            0,
+            0,
+            96,
+            0
+          ]
+        },
+        "per_level": {
+          "0": {
+            "gold": 0,
+            "predicted": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "1": {
+            "gold": 21,
+            "predicted": 35,
+            "precision": 0.457,
+            "recall": 0.762,
+            "f1": 0.571
+          },
+          "2": {
+            "gold": 74,
+            "predicted": 61,
+            "precision": 0.902,
+            "recall": 0.743,
+            "f1": 0.815
+          },
+          "3": {
+            "gold": 1,
+            "predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          }
+        },
+        "confusion_gold_rows_pred_cols": [
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            16,
+            5,
+            0
+          ],
+          [
+            0,
+            19,
+            55,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0
+          ]
+        ]
+      }
+    }
+  }
+}
