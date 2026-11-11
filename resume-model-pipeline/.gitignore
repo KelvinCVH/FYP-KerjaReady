@@ -1,3 +1,4 @@
 data/resume_dataset.csv
 models/
 __pycache__/
+tools/
