@@ -19,6 +19,7 @@ from aws_cdk import (
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
     aws_s3_deployment as s3deploy,
+    aws_ecr_assets as ecr_assets,
 )
 
 from constructs import Construct
@@ -384,6 +385,20 @@ class KerjaReadyStack(Stack):
             integration=apigwv2_integrations.HttpLambdaIntegration("SaveTargetRoleIntegration", save_target_role_function),
         )
 
+        # Resume assessment: ONNX rating model and LanguagueTool in one container image
+        # Model files are saved in S3 
+        assess_resume_function = _lambda.DockerImageFunction(
+            self,
+            "AssessResumeFunction",
+            function_name="kerjaready-assess-resume",
+            code=_lambda.DockerImageCode.from_image_asset(
+                str(FUNCTIONS_DIR / "assess-resume"),
+                platform=ecr_assets.Platform.LINUX_AMD64,
+            ),
+            memory_size=3008,
+            timeout=Duration.seconds(120),
+        )
+        
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",

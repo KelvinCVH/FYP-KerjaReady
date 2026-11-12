@@ -1,0 +1,153 @@
+{
+  "created_at": "2026-11-11T11:48:46+00:00",
+  "seed": 200,
+  "val_share": 0.15,
+  "stratified_by": "A2 (0, 1, 2+) x A3 level; groups under 5 resumes merged as 'rare'",
+  "strata_sizes": {
+    "A2=1|A3=2": 930,
+    "A2=0|A3=2": 579,
+    "A2=1|A3=1": 158,
+    "A2=0|A3=1": 137,
+    "A2=1|A3=3": 38,
+    "A2=0|A3=0": 29,
+    "A2=2+|A3=2": 20,
+    "A2=0|A3=3": 16,
+    "A2=2+|A3=3": 6,
+    "A2=2+|A3=1": 6,
+    "A2=1|A3=0": 6
+  },
+  "sizes": {
+    "train": 1635,
+    "val": 290,
+    "test": 96
+  },
+  "out_of_scope_excluded": {
+    "pool": 75,
+    "test": 4
+  },
+  "label_sources": {
+    "train": {
+      "second batch (p5)": 818,
+      "first pass (p4)": 776,
+      "relabel (p5)": 41
+    },
+    "val": {
+      "second batch (p5)": 144,
+      "first pass (p4)": 139,
+      "relabel (p5)": 7
+    },
+    "test": {
+      "test (p5)": 96
+    }
+  },
+  "categories": {
+    "train": {
+      "Datawarehousing, ETL, Informatica Resumes": 313,
+      "SQL Developers Resumes": 258,
+      "Web Developer Resumes": 241,
+      "Business Intelligence, Business Object Resumes": 226,
+      "Network and Systems Administrators Resumes": 221,
+      "Business Analyst (BA) Resumes": 209,
+      "Java Developers/Architects Resumes": 167
+    },
+    "val": {
+      "SQL Developers Resumes": 53,
+      "Datawarehousing, ETL, Informatica Resumes": 50,
+      "Web Developer Resumes": 46,
+      "Network and Systems Administrators Resumes": 44,
+      "Business Analyst (BA) Resumes": 37,
+      "Business Intelligence, Business Object Resumes": 35,
+      "Java Developers/Architects Resumes": 25
+    },
+    "test": {
+      "Datawarehousing, ETL, Informatica Resumes": 18,
+      "SQL Developers Resumes": 16,
+      "Web Developer Resumes": 14,
+      "Business Analyst (BA) Resumes": 13,
+      "Business Intelligence, Business Object Resumes": 13,
+      "Network and Systems Administrators Resumes": 12,
+      "Java Developers/Architects Resumes": 10
+    }
+  },
+  "counts": {
+    "train": {
+      "A1": [
+        6,
+        246,
+        1382,
+        1
+      ],
+      "A2": [
+        647,
+        961,
+        12,
+        15
+      ],
+      "A3": [
+        30,
+        255,
+        1299,
+        51
+      ],
+      "B2": [
+        4,
+        1324,
+        292,
+        15
+      ]
+    },
+    "val": {
+      "A1": [
+        2,
+        52,
+        236,
+        0
+      ],
+      "A2": [
+        114,
+        171,
+        1,
+        4
+      ],
+      "A3": [
+        5,
+        46,
+        230,
+        9
+      ],
+      "B2": [
+        1,
+        246,
+        39,
+        4
+      ]
+    },
+    "test": {
+      "A1": [
+        0,
+        21,
+        75,
+        0
+      ],
+      "A2": [
+        36,
+        60,
+        0,
+        0
+      ],
+      "A3": [
+        0,
+        21,
+        74,
+        1
+      ],
+      "B2": [
+        0,
+        84,
+        10,
+        2
+      ]
+    }
+  },
+  "note": "B2 labels are kept for reference but were found unreliable in calibration; do not train on them."
+}
