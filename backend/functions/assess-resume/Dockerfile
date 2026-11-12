@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
 
 # rating_model.onnx, tokenizer.json and rating_config.json from export_rating_model_onnx.py
 COPY model/ ${LAMBDA_TASK_ROOT}/model/
-COPY onnx_rating_model.py check_resume_link.py rate_language_quality.py assess_resume_handler.py ${LAMBDA_TASK_ROOT}/
+COPY onnx_rating_model.py check_resume_link.py rate_language_quality.py assess_resume.py ${LAMBDA_TASK_ROOT}/
 
-CMD ["assess_resume_handler.handler"]
+CMD ["assess_resume.handler"]

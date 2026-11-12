@@ -10,7 +10,7 @@ from transformers.utils import logging as hf_logging
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE.parent / "inference"))
+sys.path.insert(0, str(HERE.parents[1] / "backend" / "functions" / "assess-resume"))  # the Lambda function code
 from rating_model import CRITERIA, chunk_resume, load_model
 from onnx_rating_model import OnnxRatingModel
 
