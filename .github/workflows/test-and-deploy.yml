@@ -118,6 +118,14 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ap-southeast-5
 
+      # The model files are not in git; download the version named in model_version.txt
+      - name: Get the resume assessment model
+        run: |
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          MODEL_VERSION=$(tr -d '[:space:]' < backend/functions/assess-resume/model_version.txt)
+          aws s3 cp "s3://kerjaready-sagemaker-training-$ACCOUNT/rating-model/onnx/$MODEL_VERSION/" backend/functions/assess-resume/model/ --recursive
+          test -f backend/functions/assess-resume/model/rating_model.onnx
+
       - name: Deploy
         working-directory: infra
         run: cdk deploy KerjaReadyStack --require-approval never
