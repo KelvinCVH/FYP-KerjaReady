@@ -398,7 +398,32 @@ class KerjaReadyStack(Stack):
             memory_size=3008,
             timeout=Duration.seconds(120),
         )
-        
+
+        # Candidate: start a resume upload; the browser sends the PDF straight to S3
+        create_resume_upload_function = self._create_python_function(
+            "CreateResumeUploadFunction",
+            "create-resume-upload",
+            timeout=Duration.seconds(29),
+            environment={**data_api_environment, "RESUME_BUCKET_NAME": self.resume_bucket.bucket_name},
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(create_resume_upload_function)
+        self.resume_bucket.grant_put(create_resume_upload_function, "resumes/*")
+        self.http_api.add_routes(
+            path="/candidate/resumes",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "CreateResumeUploadIntegration", create_resume_upload_function
+            ),
+        )
+
+        # The browser posts the PDF to the bucket directly, so allow the app's origins
+        self.resume_bucket.add_cors_rule(
+            allowed_methods=[s3.HttpMethods.POST],
+            allowed_origins=web_app_urls,
+            allowed_headers=["*"],
+        )
+         
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",
