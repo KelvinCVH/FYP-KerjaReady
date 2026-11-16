@@ -1,6 +1,12 @@
-"""Lambda handler: rate a resume on A1, A2, A3 (ONNX model, A1 link check) and B2 (LanguageTool).
+"""Lambda handler: read an uploaded resume PDF, or rate a resume on A1, A2, A3 (ONNX model,
+A1 link check) and B2 (LanguageTool).
 
-Event:   {"text": "<resume text>", "pdf_links": ["https://...", ...]}   (pdf_links is optional)
+Deployed as kerjaready-assess-resume (see infra/stacks/kerjaready_stack.py) and called by process-resume.
+
+Read:    {"action": "extract", "bucket": "<resume bucket>", "key": "resumes/<user>/<id>.pdf"}
+Returns: {"text": "<resume text>", "pdf_links": [...]}, or {"error": "not_pdf" | "no_text"}
+
+Rate:    {"text": "<resume text>", "pdf_links": ["https://...", ...]}   (pdf_links is optional)
 Returns: {"a1": 0-3, "a2": 0-3, "a3": 0-3, "b2": 1-3, "a1_work_link": url or null,
           "b2_errors": [{"text", "rule", "message"}, ...], "model_version": "<training job>"}
 
@@ -14,10 +20,11 @@ import subprocess
 import time
 import urllib.request
 from pathlib import Path
-
+import boto3
 import rate_language_quality as language_quality
 from check_resume_link import apply_link_check
 from onnx_rating_model import OnnxRatingModel
+from read_resume_pdf import UnreadablePdf, read_resume_pdf
 
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", Path(__file__).resolve().parent / "model"))
 LT_DIR = Path(os.environ.get("LANGUAGETOOL_DIR", "/opt/languagetool"))
@@ -26,6 +33,7 @@ LT_BASE = f"http://localhost:{LT_PORT}/v2"
 LT_START_TIMEOUT = 90
 
 model = OnnxRatingModel(MODEL_DIR)
+s3 = boto3.client("s3")
 _languagetool = None
 
 
@@ -52,18 +60,33 @@ def wait_for_languagetool(timeout=LT_START_TIMEOUT):
                 raise RuntimeError(f"LanguageTool did not answer on port {LT_PORT} within {timeout} s")
             time.sleep(0.5)
 
-
 start_languagetool()  # in the background; the init phase continues while Java starts
 
+def extract(bucket, key):
+    """The uploaded PDF's text and hyperlinks, or the reason it cannot be read."""
+    started = time.time()
+    data = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+    try:
+        text, links = read_resume_pdf(data)
+    except UnreadablePdf as error:
+        print(json.dumps({"read": error.reason, "seconds": round(time.time() - started, 2)}))
+        return {"error": error.reason}
+    # log sizes only, never the resume text
+    print(json.dumps({"read": "ok", "characters": len(text), "links": len(links), "seconds": round(time.time() - started, 2)}))
+    return {"text": text, "pdf_links": links}
 
 def handler(event, context=None):
-    text = (event or {}).get("text")
+    event = event or {}
+    if event.get("action") == "extract":
+        return extract(event["bucket"], event["key"])
+
+    text = event.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ValueError("event.text must be a non-empty string with the resume text")
     started = time.time()
 
     levels = model.rate(text)
-    a1, work_link = apply_link_check(levels["a1"], text, (event or {}).get("pdf_links") or [])
+    a1, work_link = apply_link_check(levels["a1"], text, event.get("pdf_links") or [])
 
     start_languagetool()
     wait_for_languagetool()

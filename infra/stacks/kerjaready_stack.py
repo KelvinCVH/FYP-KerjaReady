@@ -20,6 +20,7 @@ from aws_cdk import (
     aws_cloudfront_origins as origins,
     aws_s3_deployment as s3deploy,
     aws_ecr_assets as ecr_assets,
+    aws_s3_notifications as s3n,
 )
 
 from constructs import Construct
@@ -398,7 +399,50 @@ class KerjaReadyStack(Stack):
             memory_size=3008,
             timeout=Duration.seconds(120),
         )
-        
+
+        # Candidate: start a resume upload; the browser sends the PDF straight to S3
+        create_resume_upload_function = self._create_python_function(
+            "CreateResumeUploadFunction",
+            "create-resume-upload",
+            timeout=Duration.seconds(29),
+            environment={**data_api_environment, "RESUME_BUCKET_NAME": self.resume_bucket.bucket_name},
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(create_resume_upload_function)
+        self.resume_bucket.grant_put(create_resume_upload_function, "resumes/*")
+        self.http_api.add_routes(
+            path="/candidate/resumes",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "CreateResumeUploadIntegration", create_resume_upload_function
+            ),
+        )
+
+        # The browser posts the PDF to the bucket directly, so allow the app's origins
+        self.resume_bucket.add_cors_rule(
+            allowed_methods=[s3.HttpMethods.POST],
+            allowed_origins=web_app_urls,
+            allowed_headers=["*"],
+        )
+
+        # Resume assessment in the background thatt calls assess-resume to read the PDF and then to rate it
+        process_resume_function = self._create_python_function(
+            "ProcessResumeFunction",
+            "process-resume",
+            timeout=Duration.minutes(3),
+            environment={**data_api_environment, "ASSESS_FUNCTION_NAME": assess_resume_function.function_name},
+            layers=[shared_layer],
+        )
+        process_resume_function.configure_async_invoke(retry_attempts=0)
+        self.cluster.grant_data_api_access(process_resume_function)
+        assess_resume_function.grant_invoke(process_resume_function)
+        self.resume_bucket.grant_read(assess_resume_function, "resumes/*")
+        self.resume_bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            s3n.LambdaDestination(process_resume_function),
+            s3.NotificationKeyFilter(prefix="resumes/", suffix=".pdf"),
+        )
+
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",
