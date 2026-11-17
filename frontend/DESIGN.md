@@ -63,6 +63,7 @@ Every status shows a text label and an icon. Colour is never the only signal.
 | Rejected | zinc-800 | zinc-200 | `CircleX` |
 | Warning | amber-800 | amber-50 | `TriangleAlert` |
 | Error (system or form) | red-700 | red-50 | `CircleAlert` |
+| In progress (an assessment still running) | zinc-700 | white with a `--border` outline (badge variant `progress`) | `LoaderCircle`, spinning unless reduced motion is on |
 
 ### 5.3 Rules
 
@@ -95,6 +96,7 @@ Every status shows a text label and an icon. Colour is never the only signal.
 
 - Use the Tailwind spacing scale only. No arbitrary pixel values unless documented here.
 - App shell: sidebar `w-56`, content padding `p-6 md:p-8`, content width `max-w-5xl`.
+- Exception, Resume page: from `2xl`, a 20rem Past Assessments panel sits beside the main column, using `grid-cols-[minmax(0,64rem)_20rem] gap-6`. The main column is still at most `max-w-5xl` (64rem), and narrows slightly between 1536px and about 1660px so the panel fits. Below `2xl`, the page is one `max-w-5xl` column with the panel below the main content. At every width the panel starts open, and its heading is a button that collapses it.
 - Landing page: container `max-w-7xl mx-auto px-4 md:px-8`, sections `py-20 md:py-28`.
 - Use CSS Grid or flex-wrap for multi-column layouts. Every multi-column layout declares its single-column layout below 768px.
 - Use `min-h-[100dvh]`, never `h-screen`.

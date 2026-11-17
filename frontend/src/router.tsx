@@ -74,7 +74,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <CandidateDashboardPage /> },
-      { path: "resume", element: <ResumePage /> },
+      // The latest assessment, or an earlier one by id: the same page either way
+      { path: "resume/:resumeId?", element: <ResumePage /> },
       { path: "resume/target-role", element: <SelectTargetRolePage /> },
       { path: "resume/result", element: <ResumeResultPage /> },
       { path: "skill-gap", element: <SkillGapPage /> },

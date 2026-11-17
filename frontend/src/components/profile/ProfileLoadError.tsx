@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CircleAlert, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { profileCard, sectionIconTile } from "./styles";
@@ -6,12 +7,14 @@ type ProfileLoadErrorProps = {
   // HTTP status of the failed request, 0 when it did not reach the API
   status: number;
   message: string;
-  onRetry: () => void;
+  onRetry?: () => void;
+  // Shown instead of Try Again when trying again can't help, such as a link away from a missing record
+  action?: ReactNode;
 };
 
 // Shown when the profile or the role list fails to load. A 503 means the database is still waking up,
 // so it gets a neutral icon; anything else is a system error (DESIGN.md 5.2).
-export default function ProfileLoadError({ status, message, onRetry }: ProfileLoadErrorProps) {
+export default function ProfileLoadError({ status, message, onRetry, action }: ProfileLoadErrorProps) {
   const startingUp = status === 503;
 
   return (
@@ -23,9 +26,13 @@ export default function ProfileLoadError({ status, message, onRetry }: ProfileLo
         <p role="alert" className="pt-2 text-base font-medium">
           {message}
         </p>
-        <Button variant="outline" className="mt-4" onClick={onRetry}>
-          Try Again
-        </Button>
+        {action ? (
+          <div className="mt-4">{action}</div>
+        ) : (
+          <Button variant="outline" className="mt-4" onClick={onRetry}>
+            Try Again
+          </Button>
+        )}
       </div>
     </div>
   );

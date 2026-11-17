@@ -2,6 +2,7 @@ import type { Ref } from "react";
 import { FileText } from "lucide-react";
 import { profileCard, sectionIconTile } from "@/components/profile/styles";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/formatDate";
 
 type CurrentResumeBarProps = {
   fileName: string;
@@ -10,8 +11,6 @@ type CurrentResumeBarProps = {
   onUploadNew: () => void;
   uploadNewRef: Ref<HTMLButtonElement>;
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-MY", { day: "numeric", month: "short", year: "numeric" });
 
 // The resume the ratings belong to, with Upload New Resume to replace it
 export default function CurrentResumeBar({ fileName, uploadedAt, onUploadNew, uploadNewRef }: CurrentResumeBarProps) {
@@ -23,7 +22,7 @@ export default function CurrentResumeBar({ fileName, uploadedAt, onUploadNew, up
       <div className="min-w-0 flex-1">
         <p className="text-base font-medium break-words">{fileName}</p>
         <p className="text-sm text-muted-foreground tabular-nums">
-          Uploaded <time dateTime={uploadedAt}>{dateFormat.format(new Date(uploadedAt))}</time> · Assessed
+          Uploaded <time dateTime={uploadedAt}>{formatDate(uploadedAt)}</time> · Assessed
         </p>
       </div>
       <Button ref={uploadNewRef} type="button" variant="outline" onClick={onUploadNew}>
