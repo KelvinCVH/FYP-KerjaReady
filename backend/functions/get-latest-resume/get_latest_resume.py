@@ -3,8 +3,9 @@ GET /candidate/resumes/latest: the signed-in candidate's latest resume, its stat
 
 Rows still at "uploading" are skipped: their file has not reached S3 (or never will, after a failed upload).
 Returns {"resume": null} when there is none, otherwise the resume with:
+- status: uploaded, reading, rating, done, failed or timed_out (a stalled run)
 - ratings: null until the status is "done"
-- view_url: a 5-minute link that opens the PDF in the browser
+- view_url: a 1-hour link that opens the PDF in the browser
 """
 
 import json
@@ -14,6 +15,7 @@ import boto3
 from botocore.config import Config
 from kerjaready_shared.api_handler import api_handler
 from kerjaready_shared.data_api import run_query
+from kerjaready_shared.resume_status import DONE, REPORTED_STATUS_SQL, UPLOADING
 
 VIEW_SECONDS = 3600
 # Timestamps as ISO 8601 in UTC ("2026-11-16T06:02:27Z"), so browsers parse them the same way
@@ -47,13 +49,13 @@ def view_url(s3_key):
 @api_handler
 def handler(event, user):
     rows = run_query(
-        "SELECT r.resume_id, r.file_name, r.s3_key, r.status, r.failure_reason, "
+        f"SELECT r.resume_id, r.file_name, r.s3_key, {REPORTED_STATUS_SQL} AS status, r.failure_reason, "
         f"{ISO_UTC.format('r.uploaded_at')} AS uploaded_at, "
         "rr.a1_rating, rr.a2_rating, rr.a3_rating, rr.b2_rating, rr.a1_work_link, "
         "CAST(rr.b2_errors AS text) AS b2_errors, rr.model_version, "
         f"{ISO_UTC.format('rr.rated_at')} AS rated_at "
         "FROM resumes r LEFT JOIN resume_ratings rr USING (resume_id) "
-        "WHERE r.candidate_id = CAST(:user_id AS uuid) AND r.status <> 'uploading' "
+        f"WHERE r.candidate_id = CAST(:user_id AS uuid) AND r.status <> '{UPLOADING}' "
         "ORDER BY r.resume_id DESC LIMIT 1",
         [{"name": "user_id", "value": {"stringValue": user["user_id"]}}],
     )
@@ -62,7 +64,7 @@ def handler(event, user):
 
     row = rows[0]
     ratings = None
-    if row["status"] == "done" and row.get("a1_rating") is not None:
+    if row["status"] == DONE and row.get("a1_rating") is not None:
         ratings = {
             "a1": row["a1_rating"],
             "a2": row["a2_rating"],

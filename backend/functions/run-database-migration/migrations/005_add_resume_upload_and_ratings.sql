@@ -6,7 +6,8 @@ ALTER TABLE resumes ALTER COLUMN extracted_text DROP NOT NULL;
 -- resumes table: Track the upload and assessment so the app can show progress
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS status varchar(10) NOT NULL DEFAULT 'uploading';
 ALTER TABLE resumes DROP CONSTRAINT IF EXISTS resumes_status_check;
-ALTER TABLE resumes ADD CONSTRAINT resumes_status_check CHECK (status IN ('uploading', 'assessing', 'done', 'failed'));
+-- NOT VALID: this file reruns on every deploy, and 006 has since replaced these values
+ALTER TABLE resumes ADD CONSTRAINT resumes_status_check CHECK (status IN ('uploading', 'assessing', 'done', 'failed')) NOT VALID;
 COMMENT ON COLUMN resumes.status IS 'uploading, assessing, done or failed';
 
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS failure_reason varchar(10);
