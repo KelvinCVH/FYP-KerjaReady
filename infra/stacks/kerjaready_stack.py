@@ -425,7 +425,7 @@ class KerjaReadyStack(Stack):
             allowed_headers=["*"],
         )
         
-        # Candidate: latest resume with its status, ratings and a 5-minute link to view the PDF
+        # Candidate: latest resume with its status, ratings and a 1 hour link to view the PDF
         get_latest_resume_function = self._create_python_function(
             "GetLatestResumeFunction",
             "get-latest-resume",
@@ -443,14 +443,22 @@ class KerjaReadyStack(Stack):
             ),
         )
 
-        # Resume assessment in the background thatt calls assess-resume to read the PDF and then to rate it
+        # Resume assessment in the background thatt calls assess-resume to read the PDF and then to rate it.
+        # The timeout stays below STALE_AFTER_SECONDS (120 s, kerjaready_shared/resume_status.py), so a run
+        # reported as timed out has really stopped before Retry starts another one.
         process_resume_function = self._create_python_function(
             "ProcessResumeFunction",
             "process-resume",
-            timeout=Duration.minutes(3),
-            environment={**data_api_environment, "ASSESS_FUNCTION_NAME": assess_resume_function.function_name},
+            timeout=Duration.seconds(110),
+            environment={
+                **data_api_environment,
+                "ASSESS_FUNCTION_NAME": assess_resume_function.function_name,
+                # Retries arrive as {"resume_id"} without the bucket; assess-resume reads the file itself
+                "RESUME_BUCKET_NAME": self.resume_bucket.bucket_name,
+            },
             layers=[shared_layer],
         )
+        # Never replay a run: retries only happen through the Retry button
         process_resume_function.configure_async_invoke(retry_attempts=0)
         self.cluster.grant_data_api_access(process_resume_function)
         assess_resume_function.grant_invoke(process_resume_function)
@@ -459,6 +467,41 @@ class KerjaReadyStack(Stack):
             s3.EventType.OBJECT_CREATED,
             s3n.LambdaDestination(process_resume_function),
             s3.NotificationKeyFilter(prefix="resumes/", suffix=".pdf"),
+        )
+
+        # Candidate: the assessment stage of one resume, checked by the Resume page every 3 seconds
+        get_resume_status_function = self._create_python_function(
+            "GetResumeStatusFunction",
+            "get-resume-status",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(get_resume_status_function)
+        self.http_api.add_routes(
+            path="/candidate/resumes/{resume_id}/status",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "GetResumeStatusIntegration", get_resume_status_function
+            ),
+        )
+
+        # Candidate: start a failed or stalled assessment again on the same resume
+        retry_resume_assessment_function = self._create_python_function(
+            "RetryResumeAssessmentFunction",
+            "retry-resume-assessment",
+            timeout=Duration.seconds(29),
+            environment={**data_api_environment, "PROCESS_FUNCTION_NAME": process_resume_function.function_name},
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(retry_resume_assessment_function)
+        process_resume_function.grant_invoke(retry_resume_assessment_function)
+        self.http_api.add_routes(
+            path="/candidate/resumes/{resume_id}/retry",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "RetryResumeAssessmentIntegration", retry_resume_assessment_function
+            ),
         )
 
         # Lambda: Apply SQL migrations through the Data API
