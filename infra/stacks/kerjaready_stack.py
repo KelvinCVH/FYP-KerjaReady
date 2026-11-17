@@ -425,7 +425,7 @@ class KerjaReadyStack(Stack):
             allowed_headers=["*"],
         )
         
-        # Candidate: latest resume with its status, ratings and a 5-minute link to view the PDF
+        # Candidate: latest resume with its status, ratings and a 1 hour link to view the PDF
         get_latest_resume_function = self._create_python_function(
             "GetLatestResumeFunction",
             "get-latest-resume",
