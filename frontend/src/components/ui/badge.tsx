@@ -14,6 +14,8 @@ const badgeVariants = cva(
         rejected: "bg-zinc-200 text-zinc-800",
         warning: "bg-amber-50 text-amber-800",
         error: "bg-red-50 text-red-700",
+        // Still running: white with a border, so it keeps its shape on a zinc-100 row. The icon spins.
+        progress: "border bg-card text-zinc-700 [&>svg]:motion-safe:animate-spin",
       },
     },
     defaultVariants: {

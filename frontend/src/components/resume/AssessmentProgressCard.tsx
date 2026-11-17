@@ -18,6 +18,8 @@ type AssessmentProgressCardProps = {
   initial: AssessmentState;
   // Runs once when the assessment is done, to load and show the ratings
   onDone: () => void;
+  // Runs each time the status moves on, so the page can refresh the Past Assessments list
+  onStatusChange?: (status: AssessmentStatus) => void;
   resultsLoad: ResultsLoad;
   onOpenResults: () => void;
   onUploadDifferent: () => void;
@@ -70,6 +72,7 @@ export default function AssessmentProgressCard({
   fileName,
   initial,
   onDone,
+  onStatusChange,
   resultsLoad,
   onOpenResults,
   onUploadDifferent,
@@ -78,6 +81,7 @@ export default function AssessmentProgressCard({
     resumeId,
     initial,
     onDone,
+    onStatusChange,
   );
 
   const uploadDifferent = (primary: boolean) => (

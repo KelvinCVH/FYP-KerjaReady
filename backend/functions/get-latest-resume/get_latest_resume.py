@@ -1,8 +1,10 @@
 """
 GET /candidate/resumes/latest: the signed-in candidate's latest resume, its status and its ratings.
+GET /candidate/resumes/{resume_id}: the same for one of their earlier resumes.
 
 Rows still at "uploading" are skipped: their file has not reached S3 (or never will, after a failed upload).
-Returns {"resume": null} when there is none, otherwise the resume with:
+/latest returns {"resume": null} when there is none. /{resume_id} returns 404 for a resume that is missing,
+still uploading or another candidate's. Otherwise the resume comes back with:
 - status: uploaded, reading, rating, done, failed or timed_out (a stalled run)
 - ratings: null until the status is "done"
 - view_url: a 1-hour link that opens the PDF in the browser
@@ -18,6 +20,7 @@ from kerjaready_shared.data_api import run_query
 from kerjaready_shared.resume_status import DONE, REPORTED_STATUS_SQL, UPLOADING
 
 VIEW_SECONDS = 3600
+NOT_FOUND = {"message": "We couldn’t find that resume."}
 # Timestamps as ISO 8601 in UTC ("2026-11-16T06:02:27Z"), so browsers parse them the same way
 ISO_UTC = """to_char({} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')"""
 
@@ -46,8 +49,26 @@ def view_url(s3_key):
     )
 
 
+def read_resume_id(event):
+    """The resume id from the path: None on /latest, False when it is not a whole number."""
+    value = (event.get("pathParameters") or {}).get("resume_id")
+    if value is None:
+        return None
+    return int(value) if value.isdigit() else False
+
+
 @api_handler
 def handler(event, user):
+    resume_id = read_resume_id(event)
+    if resume_id is False:
+        return 404, NOT_FOUND
+
+    parameters = [{"name": "user_id", "value": {"stringValue": user["user_id"]}}]
+    which = ""
+    if resume_id is not None:
+        which = "AND r.resume_id = :resume_id "
+        parameters.append({"name": "resume_id", "value": {"longValue": resume_id}})
+
     rows = run_query(
         f"SELECT r.resume_id, r.file_name, r.s3_key, {REPORTED_STATUS_SQL} AS status, r.failure_reason, "
         f"{ISO_UTC.format('r.uploaded_at')} AS uploaded_at, "
@@ -56,11 +77,11 @@ def handler(event, user):
         f"{ISO_UTC.format('rr.rated_at')} AS rated_at "
         "FROM resumes r LEFT JOIN resume_ratings rr USING (resume_id) "
         f"WHERE r.candidate_id = CAST(:user_id AS uuid) AND r.status <> '{UPLOADING}' "
-        "ORDER BY r.resume_id DESC LIMIT 1",
-        [{"name": "user_id", "value": {"stringValue": user["user_id"]}}],
+        f"{which}ORDER BY r.resume_id DESC LIMIT 1",
+        parameters,
     )
     if not rows:
-        return 200, {"resume": None}
+        return (200, {"resume": None}) if resume_id is None else (404, NOT_FOUND)
 
     row = rows[0]
     ratings = None

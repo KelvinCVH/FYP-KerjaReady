@@ -442,6 +442,32 @@ class KerjaReadyStack(Stack):
                 "GetLatestResumeIntegration", get_latest_resume_function
             ),
         )
+        
+        # Same function: one earlier resume by id, for the Past Assessments panel
+        self.http_api.add_routes(
+            path="/candidate/resumes/{resume_id}",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "GetResumeByIdIntegration", get_latest_resume_function
+            ),
+        )
+
+        # Candidate: all their resume assessments, newest first, for the Past Assessments panel
+        list_resumes_function = self._create_python_function(
+            "ListResumesFunction",
+            "list-resumes",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(list_resumes_function)
+        self.http_api.add_routes(
+            path="/candidate/resumes",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "ListResumesIntegration", list_resumes_function
+            ),
+        )
 
         # Resume assessment in the background thatt calls assess-resume to read the PDF and then to rate it.
         # The timeout stays below STALE_AFTER_SECONDS (120 s, kerjaready_shared/resume_status.py), so a run

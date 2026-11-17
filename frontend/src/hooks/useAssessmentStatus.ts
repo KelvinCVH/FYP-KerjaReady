@@ -5,6 +5,7 @@ import {
   isFinalStatus,
   retryResumeAssessment,
   type AssessmentState,
+  type AssessmentStatus,
 } from "@/lib/resumeApi";
 
 const POLL_MS = 3000;
@@ -15,9 +16,17 @@ function isPermanent(error: unknown) {
 }
 
 // Checks one resume's assessment every 3 seconds until it is done, failed or timed out.
-// onDone runs once when the status becomes done. The caller remounts the hook (key) for another resume.
-export function useAssessmentStatus(resumeId: number, initial: AssessmentState, onDone: () => void) {
+// onDone runs once when the status becomes done. onStatusChange runs each time the status moves on, including
+// after Try Again. The caller remounts the hook (key) for another resume.
+export function useAssessmentStatus(
+  resumeId: number,
+  initial: AssessmentState,
+  onDone: () => void,
+  onStatusChange?: (status: AssessmentStatus) => void,
+) {
   const [state, setState] = useState(initial);
+  // The status onStatusChange last saw. A ref, so StrictMode's second effect run doesn't report it twice.
+  const reportedRef = useRef(initial.status);
   const [polling, setPolling] = useState(!isFinalStatus(initial.status));
   // Bumped to restart checking after Retry. Checking then starts straight away, not after 3 seconds.
   const [round, setRound] = useState(0);
@@ -28,6 +37,13 @@ export function useAssessmentStatus(resumeId: number, initial: AssessmentState, 
   const retryingRef = useRef(false);
 
   const notifyDone = useEffectEvent(onDone);
+  const notifyChange = useEffectEvent((status: AssessmentStatus) => onStatusChange?.(status));
+
+  useEffect(() => {
+    if (reportedRef.current === state.status) return;
+    reportedRef.current = state.status;
+    notifyChange(state.status);
+  }, [state.status]);
 
   useEffect(() => {
     if (!polling) return;

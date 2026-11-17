@@ -25,7 +25,8 @@ export function isFinalStatus(status: AssessmentStatus) {
   return status === "done" || status === "failed" || status === "timed_out";
 }
 
-export type LatestResume = {
+// One resume with its assessment, as the Resume page shows it
+export type ResumeAssessment = {
   resume_id: number;
   file_name: string;
   status: AssessmentStatus;
@@ -38,10 +39,35 @@ export type LatestResume = {
   ratings: ResumeRatings | null;
 };
 
+// One row of the Past Assessments list: no ratings, only where the assessment got to
+export type ResumeSummary = {
+  resume_id: number;
+  file_name: string;
+  // ISO 8601 in UTC
+  uploaded_at: string;
+  status: AssessmentStatus;
+  failure_reason: FailureReason | null;
+};
+
+// The most rows the list route returns
+export const RESUME_LIST_LIMIT = 50;
+
 // The signed-in candidate's latest resume, or null when they have not uploaded one
 export async function getLatestResume() {
-  const { resume } = await apiGet<{ resume: LatestResume | null }>("/candidate/resumes/latest");
+  const { resume } = await apiGet<{ resume: ResumeAssessment | null }>("/candidate/resumes/latest");
   return resume;
+}
+
+// One of the candidate's resumes by id. 404 when it is missing, still uploading or not theirs.
+export async function getResume(resumeId: number) {
+  const { resume } = await apiGet<{ resume: ResumeAssessment }>(`/candidate/resumes/${resumeId}`);
+  return resume;
+}
+
+// The candidate's resume assessments, newest first, at most RESUME_LIST_LIMIT
+export async function listResumes() {
+  const { resumes } = await apiGet<{ resumes: ResumeSummary[] }>("/candidate/resumes");
+  return resumes;
 }
 
 // The assessment status of one resume, checked while the progress card is open
