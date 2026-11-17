@@ -19,6 +19,10 @@ type ResumeUploadCardProps = {
   onCancel?: () => void;
   // The card's heading, so the page can move focus to it when the card appears
   headingRef?: Ref<HTMLHeadingElement>;
+  // Called once the PDF is in S3, so the page can show the assessment's progress below the card
+  onUploaded?: (resumeId: number, fileName: string) => void;
+  // A resume uploaded before the page loaded, still being assessed: shown as its file row, not the drop area
+  existingFileName?: string;
 };
 
 const HELPER_ID = "resume-file-helper";
@@ -29,7 +33,7 @@ const hints: Record<Exclude<Phase, "uploaded">, string | null> = {
   failed: null,
 };
 
-export default function ResumeUploadCard({ onCancel, headingRef }: ResumeUploadCardProps) {
+export default function ResumeUploadCard({ onCancel, headingRef, onUploaded, existingFileName }: ResumeUploadCardProps) {
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   // A file check message or a failed upload, shown in the red banner
@@ -101,8 +105,12 @@ export default function ResumeUploadCard({ onCancel, headingRef }: ResumeUploadC
       if (controller.signal.aborted) return;
       await uploadResumeFile(created.upload, file, controller.signal);
       if (controller.signal.aborted) return;
-      // Render the success message now, so it exists to take focus from the removed upload button
-      flushSync(() => setPhase("uploaded"));
+      // Render the success message and the progress card now, so the message exists to take focus from the
+      // removed upload button
+      flushSync(() => {
+        setPhase("uploaded");
+        onUploaded?.(created.resume_id, file.name);
+      });
       successRef.current?.focus();
     } catch (uploadError) {
       if (controller.signal.aborted) return;
@@ -160,7 +168,15 @@ export default function ResumeUploadCard({ onCancel, headingRef }: ResumeUploadC
         {error && <FormAlert message={error} />}
 
         {file ? (
-          <SelectedResumeFile file={file} uploaded={uploaded} onChange={openPicker} changeDisabled={uploading} />
+          <SelectedResumeFile
+            name={file.name}
+            size={file.size}
+            uploaded={uploaded}
+            onChange={openPicker}
+            changeDisabled={uploading}
+          />
+        ) : existingFileName ? (
+          <SelectedResumeFile name={existingFileName} uploaded />
         ) : (
           <div>
             <ResumeDropzone onDrop={selectFile} onChoose={openPicker} describedBy={HELPER_ID} chooseRef={chooseRef} />
@@ -170,29 +186,24 @@ export default function ResumeUploadCard({ onCancel, headingRef }: ResumeUploadC
           </div>
         )}
 
-        {uploaded ? (
-          <p className="pt-1 text-sm text-muted-foreground">
-            Your ratings will appear here when the assessment finishes. Reopen this page in a couple of minutes.
-          </p>
-        ) : (
-          file && (
-            <div className="flex items-center gap-4 pt-1">
-              <LoadingButton
-                ref={uploadRef}
-                pending={uploading}
-                pendingLabel="Uploading…"
-                onClick={upload}
-                // Grey while uploading, so the label keeps full contrast (not a faded green)
-                className={cn(uploading && "bg-muted text-muted-foreground hover:bg-muted")}
-              >
-                {phase === "failed" ? "Try Again" : "Upload and Assess"}
-              </LoadingButton>
-              {/* Always in the page while a file is chosen, so the uploading hint is announced */}
-              <p role="status" className="text-sm text-muted-foreground">
-                {hints[phase]}
-              </p>
-            </div>
-          )
+        {/* Once uploaded, the progress card below the card takes over */}
+        {file && !uploaded && (
+          <div className="flex items-center gap-4 pt-1">
+            <LoadingButton
+              ref={uploadRef}
+              pending={uploading}
+              pendingLabel="Uploading…"
+              onClick={upload}
+              // Grey while uploading, so the label keeps full contrast (not a faded green)
+              className={cn(uploading && "bg-muted text-muted-foreground hover:bg-muted")}
+            >
+              {phase === "failed" ? "Try Again" : "Upload and Assess"}
+            </LoadingButton>
+            {/* Always in the page while a file is chosen, so the uploading hint is announced */}
+            <p role="status" className="text-sm text-muted-foreground">
+              {hints[phase]}
+            </p>
+          </div>
         )}
       </div>
     </section>
