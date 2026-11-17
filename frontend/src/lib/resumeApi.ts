@@ -1,4 +1,35 @@
-import { apiSend, ApiError } from "./apiClient";
+import { apiGet, apiSend, ApiError } from "./apiClient";
+import type { CriterionKey } from "./rubric";
+
+// One language error the checker found: the words from the resume and why they were flagged
+export type LanguageError = { text: string; rule: string; message: string };
+
+// Levels are 0 to 3, keyed by rubric criterion. Show rubric names, never these keys.
+export type ResumeRatings = Record<CriterionKey, number> & {
+  a1_work_link: string | null;
+  b2_errors: LanguageError[];
+  model_version: string;
+  rated_at: string;
+};
+
+export type LatestResume = {
+  resume_id: number;
+  file_name: string;
+  status: "assessing" | "done" | "failed";
+  failure_reason: "not_pdf" | "no_text" | "error" | null;
+  // ISO 8601 in UTC
+  uploaded_at: string;
+  // Presigned link to the PDF, valid for an hour
+  view_url: string;
+  // null until the status is "done"
+  ratings: ResumeRatings | null;
+};
+
+// The signed-in candidate's latest resume, or null when they have not uploaded one
+export async function getLatestResume() {
+  const { resume } = await apiGet<{ resume: LatestResume | null }>("/candidate/resumes/latest");
+  return resume;
+}
 
 // A one-time S3 upload form: POST to url with every field, then the file
 export type ResumeUploadTarget = { url: string; fields: Record<string, string> };

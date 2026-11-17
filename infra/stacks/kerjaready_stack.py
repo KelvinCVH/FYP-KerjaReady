@@ -424,6 +424,24 @@ class KerjaReadyStack(Stack):
             allowed_origins=web_app_urls,
             allowed_headers=["*"],
         )
+        
+        # Candidate: latest resume with its status, ratings and a 5-minute link to view the PDF
+        get_latest_resume_function = self._create_python_function(
+            "GetLatestResumeFunction",
+            "get-latest-resume",
+            timeout=Duration.seconds(29),
+            environment={**data_api_environment, "RESUME_BUCKET_NAME": self.resume_bucket.bucket_name},
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(get_latest_resume_function)
+        self.resume_bucket.grant_read(get_latest_resume_function, "resumes/*")
+        self.http_api.add_routes(
+            path="/candidate/resumes/latest",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "GetLatestResumeIntegration", get_latest_resume_function
+            ),
+        )
 
         # Resume assessment in the background thatt calls assess-resume to read the PDF and then to rate it
         process_resume_function = self._create_python_function(

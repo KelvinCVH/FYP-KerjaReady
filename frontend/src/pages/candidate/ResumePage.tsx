@@ -1,124 +1,95 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Link } from "react-router";
-import { cn } from "cn";
-import { CircleCheck } from "lucide-react";
-import FormAlert from "@/components/auth/FormAlert";
-import LoadingButton from "@/components/LoadingButton";
-import { profileCard } from "@/components/profile/styles";
-import ResumeDropzone from "@/components/resume/ResumeDropzone";
-import SelectedResumeFile from "@/components/resume/SelectedResumeFile";
-import { Button } from "@/components/ui/button";
+import { Info } from "lucide-react";
+import ProfileLoadError from "@/components/profile/ProfileLoadError";
+import CurrentResumeBar from "@/components/resume/CurrentResumeBar";
+import ResumePreview from "@/components/resume/ResumePreview";
+import ResumeRatings from "@/components/resume/ResumeRatings";
+import ResumeSkeleton from "@/components/resume/ResumeSkeleton";
+import ResumeUploadCard from "@/components/resume/ResumeUploadCard";
+import { useApiData } from "@/hooks/useApiData";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { getApiErrorMessage } from "@/lib/apiClient";
-import { createResume, uploadResumeFile } from "@/lib/resumeApi";
-import { validateResumeFile } from "@/lib/resumeFile";
+import { getLatestResume, type LatestResume, type ResumeRatings as Ratings } from "@/lib/resumeApi";
+import { RUBRIC } from "@/lib/rubric";
 
-// idle: no file or a file not yet uploaded. failed: the last upload failed and can be tried again.
-type Phase = "idle" | "uploading" | "failed" | "uploaded";
-
-const HELPER_ID = "resume-file-helper";
-
-const hints: Record<Phase, string | null> = {
-  idle: "The assessment starts as soon as the upload finishes.",
-  uploading: "Uploading your resume. Keep this page open.",
-  failed: null,
-  uploaded: "The assessment can take up to a minute.",
+// Shown above the upload card when the latest resume has no ratings to show. KR-93 replaces these lines.
+const STATUS_LINES = {
+  assessing: "Your last resume is still being assessed. Reopen this page in a couple of minutes.",
+  failed: "We couldn’t assess your last resume. Upload it again or try another PDF.",
 };
+
+// Every criterion has a whole-number level from 0 to 3
+function hasValidRatings(ratings: Ratings | null): ratings is Ratings {
+  return (
+    ratings !== null &&
+    RUBRIC.every(({ key }) => Number.isInteger(ratings[key]) && ratings[key] >= 0 && ratings[key] <= 3)
+  );
+}
+
+// "done" without usable ratings is treated as a failed assessment
+function statusLineFor(resume: LatestResume | null) {
+  if (!resume) return null;
+  return resume.status === "assessing" ? STATUS_LINES.assessing : STATUS_LINES.failed;
+}
 
 export default function ResumePage() {
   usePageTitle("Resume | KerjaReady");
 
-  const [file, setFile] = useState<File | null>(null);
-  const [phase, setPhase] = useState<Phase>("idle");
-  // A file check message or a failed upload, shown in the red banner
-  const [error, setError] = useState<string | null>(null);
-  const [resumeId, setResumeId] = useState<number | null>(null);
+  const { state: page, retry } = useApiData(getLatestResume);
+  // Upload New Resume swaps the ratings for the upload card until Cancel
+  const [replacing, setReplacing] = useState(false);
+  const uploadHeadingRef = useRef<HTMLHeadingElement>(null);
+  const uploadNewRef = useRef<HTMLButtonElement>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const chooseRef = useRef<HTMLButtonElement>(null);
-  const uploadRef = useRef<HTMLButtonElement>(null);
-  const viewRef = useRef<HTMLAnchorElement>(null);
-  // Set while an upload runs, so a second click can't start another one
-  const busyRef = useRef(false);
-  const controllerRef = useRef<AbortController | null>(null);
-
-  // Leaving the page stops an upload in progress
-  useEffect(() => () => controllerRef.current?.abort(), []);
-
-  // Closing or reloading the tab mid-upload asks the browser to confirm first
-  useEffect(() => {
-    if (phase !== "uploading") return;
-    function warn(event: BeforeUnloadEvent) {
-      event.preventDefault();
-    }
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [phase]);
-
-  function openPicker() {
-    inputRef.current?.click();
+  // Render the new view first, so the element that takes focus exists
+  function startReplacing() {
+    flushSync(() => setReplacing(true));
+    uploadHeadingRef.current?.focus();
   }
 
-  // Shared by the file picker and drag and drop. The control that had focus may be gone after the
-  // change, so focus moves to the one the user needs next.
-  function selectFile(picked: File) {
-    const message = validateResumeFile(picked);
-    flushSync(() => {
-      setFile(message ? null : picked);
-      setError(message);
-      setPhase("idle");
-    });
-    if (message) chooseRef.current?.focus();
-    else uploadRef.current?.focus();
+  function cancelReplacing() {
+    flushSync(() => setReplacing(false));
+    uploadNewRef.current?.focus();
   }
 
-  function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
-    const picked = event.target.files?.[0];
-    // Reset, so choosing the same file again still fires a change
-    event.target.value = "";
-    if (picked) selectFile(picked);
-  }
-
-  // Creates the resume record, then uploads the PDF to S3. A retry always starts again here, so it
-  // gets a fresh upload form.
-  async function upload() {
-    if (!file || busyRef.current) return;
-    const message = validateResumeFile(file);
-    if (message) {
-      selectFile(file);
-      return;
+  function renderContent() {
+    if (page.status === "loading") return <ResumeSkeleton />;
+    if (page.status === "error") {
+      return <ProfileLoadError status={page.httpStatus} message={page.message} onRetry={retry} />;
     }
 
-    busyRef.current = true;
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    setError(null);
-    setPhase("uploading");
-
-    try {
-      const created = await createResume(file.name);
-      if (controller.signal.aborted) return;
-      await uploadResumeFile(created.upload, file, controller.signal);
-      if (controller.signal.aborted) return;
-      // Render View Assessment now, so it exists to take focus from the removed upload button
-      flushSync(() => {
-        setResumeId(created.resume_id);
-        setPhase("uploaded");
-      });
-      viewRef.current?.focus();
-    } catch (uploadError) {
-      if (controller.signal.aborted) return;
-      setError(getApiErrorMessage(uploadError));
-      setPhase("failed");
-    } finally {
-      busyRef.current = false;
+    const resume = page.data;
+    if (resume?.status === "done" && hasValidRatings(resume.ratings)) {
+      if (replacing) return <ResumeUploadCard onCancel={cancelReplacing} headingRef={uploadHeadingRef} />;
+      return (
+        <div className="space-y-6">
+          <CurrentResumeBar
+            fileName={resume.file_name}
+            uploadedAt={resume.uploaded_at}
+            onUploadNew={startReplacing}
+            uploadNewRef={uploadNewRef}
+          />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <ResumeRatings ratings={resume.ratings} />
+            <ResumePreview url={resume.view_url} />
+          </div>
+        </div>
+      );
     }
-  }
 
-  const uploading = phase === "uploading";
-  const uploaded = phase === "uploaded";
-  const hint = hints[phase];
+    const statusLine = statusLineFor(resume);
+    return (
+      <div className="space-y-4">
+        {statusLine && (
+          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            {statusLine}
+          </p>
+        )}
+        <ResumeUploadCard />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl">
@@ -126,78 +97,7 @@ export default function ResumePage() {
       <p className="mt-2 text-base leading-relaxed text-muted-foreground">
         Upload your resume to see how it is rated on each assessed criterion.
       </p>
-
-      <section aria-labelledby="upload-resume-heading" className={`${profileCard} mt-6`}>
-        <h2 id="upload-resume-heading" className="text-xl font-semibold text-balance">
-          Upload Resume
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your resume is rated on work evidence, outcomes, skills in use and language quality.
-        </p>
-
-        {/* Picked through Choose PDF or Change File, so it stays out of the tab order */}
-        <input
-          ref={inputRef}
-          type="file"
-          name="resume"
-          accept=".pdf,application/pdf"
-          tabIndex={-1}
-          aria-hidden="true"
-          className="hidden"
-          onChange={handleInputChange}
-        />
-
-        <div className="mt-5 space-y-4 border-t pt-6">
-          {/* Always in the page, so screen readers announce the success message when it appears */}
-          <div role="status" className="empty:hidden">
-            {uploaded && (
-              <p className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                <CircleCheck aria-hidden="true" className="size-4 shrink-0" />
-                Resume uploaded. Your assessment has started.
-              </p>
-            )}
-          </div>
-          {error && <FormAlert message={error} />}
-
-          {file ? (
-            <SelectedResumeFile file={file} uploaded={uploaded} onChange={openPicker} changeDisabled={uploading} />
-          ) : (
-            <div>
-              <ResumeDropzone onDrop={selectFile} onChoose={openPicker} describedBy={HELPER_ID} chooseRef={chooseRef} />
-              <p id={HELPER_ID} className="mt-4 text-sm text-muted-foreground">
-                PDF only, up to 5&nbsp;MB. Scanned PDFs can’t be read.
-              </p>
-            </div>
-          )}
-
-          {file && (
-            <div className="flex items-center gap-4 pt-1">
-              {uploaded && resumeId !== null ? (
-                <Button asChild>
-                  <Link ref={viewRef} to={`/candidate/resume/result/${resumeId}`}>
-                    View Assessment
-                  </Link>
-                </Button>
-              ) : (
-                <LoadingButton
-                  ref={uploadRef}
-                  pending={uploading}
-                  pendingLabel="Uploading…"
-                  onClick={upload}
-                  // Grey while uploading, so the label keeps full contrast (not a faded green)
-                  className={cn(uploading && "bg-muted text-muted-foreground hover:bg-muted")}
-                >
-                  {phase === "failed" ? "Try Again" : "Upload and Assess"}
-                </LoadingButton>
-              )}
-              {/* Always in the page while a file is chosen, so the uploading hint is announced */}
-              <p role="status" className="text-sm text-muted-foreground">
-                {hint}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+      <div className="mt-6">{renderContent()}</div>
     </div>
   );
 }
