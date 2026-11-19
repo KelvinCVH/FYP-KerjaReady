@@ -33,6 +33,8 @@ DATABASE_NAME = "kerjaready"
 FUNCTIONS_DIR = Path(__file__).resolve().parents[2] / "backend" / "functions"
 LAYERS_DIR = Path(__file__).resolve().parents[2] / "backend" / "layers"
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+MODEL_BUCKET_PREFIX = "kerjaready-sagemaker-training"
+MODEL_KEY_PREFIXES = ["rating-model/onnx/", "skill-embedding/"]
 
 class KerjaReadyStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:

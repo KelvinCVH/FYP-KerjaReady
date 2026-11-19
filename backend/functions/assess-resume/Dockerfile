@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
 
 # rating_model.onnx, tokenizer.json and rating_config.json from export_rating_model_onnx.py
 COPY model/ ${LAMBDA_TASK_ROOT}/model/
-COPY onnx_rating_model.py check_resume_link.py rate_language_quality.py read_resume_pdf.py assess_resume.py ${LAMBDA_TASK_ROOT}/
+# skill embedding model and skill vectors from knowledge-base-pipeline/build_skill_embeddings.py
+COPY skill_embedding/ ${LAMBDA_TASK_ROOT}/skill_embedding/
+COPY onnx_rating_model.py skill_embedding_model.py check_resume_link.py rate_language_quality.py read_resume_pdf.py assess_resume.py ${LAMBDA_TASK_ROOT}/
 
 CMD ["assess_resume.handler"]

@@ -25,8 +25,10 @@ import rate_language_quality as language_quality
 from check_resume_link import apply_link_check
 from onnx_rating_model import OnnxRatingModel
 from read_resume_pdf import UnreadablePdf, read_resume_pdf
+from skill_embedding_model import SkillEmbeddingModel
 
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", Path(__file__).resolve().parent / "model"))
+SKILL_EMBEDDING_DIR = Path(os.environ.get("SKILL_EMBEDDING_DIR", Path(__file__).resolve().parent / "skill_embedding"))
 LT_DIR = Path(os.environ.get("LANGUAGETOOL_DIR", "/opt/languagetool"))
 LT_PORT = int(os.environ.get("LANGUAGETOOL_PORT", "8081"))
 LT_BASE = f"http://localhost:{LT_PORT}/v2"
@@ -35,7 +37,9 @@ LT_START_TIMEOUT = 90
 model = OnnxRatingModel(MODEL_DIR)
 s3 = boto3.client("s3")
 _languagetool = None
-
+_loading = time.time()
+skill_embedding = SkillEmbeddingModel(SKILL_EMBEDDING_DIR)
+print(json.dumps({"init": "skill_embedding", "version": skill_embedding.version, "seconds": round(time.time() - _loading, 2)}))
 
 def start_languagetool():
     """Start the bundled LanguageTool server if it is not running. Without the bundle (local development),
