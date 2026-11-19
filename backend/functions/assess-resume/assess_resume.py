@@ -12,6 +12,7 @@ Returns: {"a1": 0-3, "a2": 0-3, "a3": 0-3, "b2": 1-3, "a1_work_link": url or nul
 
 LanguageTool runs as a local Java server inside the same container. It is started in the background
 when the container starts (Lambda allows 10 s for that phase) and the first request waits until it is ready.
+The skill embedding model loads on the first rating, while LanguageTool is still starting.
 """
 
 import json
@@ -37,9 +38,7 @@ LT_START_TIMEOUT = 90
 model = OnnxRatingModel(MODEL_DIR)
 s3 = boto3.client("s3")
 _languagetool = None
-_loading = time.time()
-skill_embedding = SkillEmbeddingModel(SKILL_EMBEDDING_DIR)
-print(json.dumps({"init": "skill_embedding", "version": skill_embedding.version, "seconds": round(time.time() - _loading, 2)}))
+_skill_embedding = None
 
 def start_languagetool():
     """Start the bundled LanguageTool server if it is not running. Without the bundle (local development),
@@ -65,6 +64,18 @@ def wait_for_languagetool(timeout=LT_START_TIMEOUT):
             time.sleep(0.5)
 
 start_languagetool()  # in the background; the init phase continues while Java starts
+
+
+def get_skill_embedding():
+    """The skill embedding model, loaded on first use. Loading it at start-up pushed the init phase past
+    Lambda's 10 s limit, so Lambda ran the init twice."""
+    global _skill_embedding
+    if _skill_embedding is None:
+        loading = time.time()
+        _skill_embedding = SkillEmbeddingModel(SKILL_EMBEDDING_DIR)
+        print(json.dumps({"loaded": "skill_embedding", "version": _skill_embedding.version,
+                          "seconds": round(time.time() - loading, 2)}))
+    return _skill_embedding
 
 def extract(bucket, key):
     """The uploaded PDF's text and hyperlinks, or the reason it cannot be read."""
@@ -93,6 +104,7 @@ def handler(event, context=None):
     a1, work_link = apply_link_check(levels["a1"], text, event.get("pdf_links") or [])
 
     start_languagetool()
+    get_skill_embedding()  # the first rating loads it (about 4 s) while LanguageTool is still starting
     wait_for_languagetool()
     b2, b2_errors = language_quality.rate_b2(text, url=f"{LT_BASE}/check")
 
