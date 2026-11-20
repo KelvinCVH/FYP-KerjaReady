@@ -11,8 +11,8 @@ from skill_matching import EDUCATION_LINE, find_skills
 
 # Set by the calibration. "raw" is the cosine similarity; "relative" is how far a skill stands out for a line,
 # in standard deviations above that line's mean similarity to all skills. None keeps semantic matching off.
-SEMANTIC_SCORE = "relative"
-SEMANTIC_THRESHOLD = None
+SEMANTIC_SCORE = "raw"
+SEMANTIC_THRESHOLD = 0.8862
 
 MIN_WORDS = 4  # shorter lines (headings, comma-separated skill lists) are left to the rule-based match
 MAX_LINES = 150
