@@ -17,6 +17,6 @@ RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
 COPY model/ ${LAMBDA_TASK_ROOT}/model/
 # skill embedding model and skill vectors from knowledge-base-pipeline/build_skill_embeddings.py
 COPY skill_embedding/ ${LAMBDA_TASK_ROOT}/skill_embedding/
-COPY onnx_rating_model.py skill_embedding_model.py check_resume_link.py rate_language_quality.py read_resume_pdf.py assess_resume.py ${LAMBDA_TASK_ROOT}/
+COPY onnx_rating_model.py skill_embedding_model.py skill_matching.py match_resume_skills.py check_resume_link.py rate_language_quality.py read_resume_pdf.py assess_resume.py ${LAMBDA_TASK_ROOT}/
 
 CMD ["assess_resume.handler"]

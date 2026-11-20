@@ -1,5 +1,5 @@
-"""Lambda handler: read an uploaded resume PDF, or rate a resume on A1, A2, A3 (ONNX model,
-A1 link check) and B2 (LanguageTool).
+"""Lambda handler: read an uploaded resume PDF, rate a resume on A1, A2, A3 (ONNX model,
+A1 link check) and B2 (LanguageTool), or find the skills a resume evidences.
 
 Deployed as kerjaready-assess-resume (see infra/stacks/kerjaready_stack.py) and called by process-resume.
 
@@ -9,6 +9,10 @@ Returns: {"text": "<resume text>", "pdf_links": [...]}, or {"error": "not_pdf" |
 Rate:    {"text": "<resume text>", "pdf_links": ["https://...", ...]}   (pdf_links is optional)
 Returns: {"a1": 0-3, "a2": 0-3, "a3": 0-3, "b2": 1-3, "a1_work_link": url or null,
           "b2_errors": [{"text", "rule", "message"}, ...], "model_version": "<training job>"}
+
+Match:   {"action": "match_skills", "text": "<resume text>"}
+Returns: {"skills": [{"skill", "evidence", "method": "lexical" | "semantic"}, ...],
+          "skill_embedding_version": "<version>"}
 
 LanguageTool runs as a local Java server inside the same container. It is started in the background
 when the container starts (Lambda allows 10 s for that phase) and the first request waits until it is ready.
@@ -25,8 +29,10 @@ import boto3
 import rate_language_quality as language_quality
 from check_resume_link import apply_link_check
 from onnx_rating_model import OnnxRatingModel
+from match_resume_skills import match_resume_skills
 from read_resume_pdf import UnreadablePdf, read_resume_pdf
 from skill_embedding_model import SkillEmbeddingModel
+from skill_matching import load_vocabulary
 
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", Path(__file__).resolve().parent / "model"))
 SKILL_EMBEDDING_DIR = Path(os.environ.get("SKILL_EMBEDDING_DIR", Path(__file__).resolve().parent / "skill_embedding"))
@@ -39,6 +45,7 @@ model = OnnxRatingModel(MODEL_DIR)
 s3 = boto3.client("s3")
 _languagetool = None
 _skill_embedding = None
+_vocabulary = None
 
 def start_languagetool():
     """Start the bundled LanguageTool server if it is not running. Without the bundle (local development),
@@ -77,6 +84,28 @@ def get_skill_embedding():
                           "seconds": round(time.time() - loading, 2)}))
     return _skill_embedding
 
+
+def get_vocabulary():
+    """The skill vocabulary saved with the skill vectors, so both matches use the same skills."""
+    global _vocabulary
+    if _vocabulary is None:
+        vocabulary = load_vocabulary(SKILL_EMBEDDING_DIR / "skill_vocabulary.csv")
+        if [skill for skill, _ in vocabulary] != get_skill_embedding().skill_names:
+            raise ValueError("skill_vocabulary.csv and skill_names.json list different skills")
+        _vocabulary = vocabulary
+    return _vocabulary
+
+
+def match_skills(text):
+    """The skills the resume evidences, each with the line that evidences it."""
+    started = time.time()
+    skills = match_resume_skills(text, get_vocabulary(), get_skill_embedding())
+    # log counts and timing only, never the resume text
+    methods = [skill["method"] for skill in skills]
+    print(json.dumps({"skills": {"lexical": methods.count("lexical"), "semantic": methods.count("semantic")},
+                      "seconds": round(time.time() - started, 2)}))
+    return {"skills": skills, "skill_embedding_version": get_skill_embedding().version}
+
 def extract(bucket, key):
     """The uploaded PDF's text and hyperlinks, or the reason it cannot be read."""
     started = time.time()
@@ -98,6 +127,8 @@ def handler(event, context=None):
     text = event.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ValueError("event.text must be a non-empty string with the resume text")
+    if event.get("action") == "match_skills":
+        return match_skills(text)
     started = time.time()
 
     levels = model.rate(text)

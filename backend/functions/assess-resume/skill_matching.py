@@ -1,8 +1,12 @@
-"""Find skills from the curated vocabulary in text, line by line."""
+"""Find skills from the curated vocabulary in text, line by line.
 
+Used by kerjaready-assess-resume for resumes and by knowledge-base-pipeline/extract_role_skills.py for job
+postings, so resumes and role profiles use one definition of each skill. Reads the CSV without pandas,
+which the Lambda container does not install.
+"""
+
+import csv
 import re
-
-import pandas as pd
 
 # Phrases removed before matching, because they contain a skill name with another meaning
 BLOCKED_PHRASES = re.compile(
@@ -28,17 +32,16 @@ def alias_pattern(aliases, case_sensitive):
 
 
 def load_vocabulary(vocabulary_csv):
-    """Each skill with its compiled alias patterns."""
+    """Each skill with its compiled alias patterns, in file order."""
     vocabulary = []
-    for skill, aliases, case_sensitive in pd.read_csv(vocabulary_csv)[
-        ["skill", "aliases", "case_sensitive_aliases"]
-    ].itertuples(index=False):
-        patterns = []
-        if split_aliases(aliases):
-            patterns.append(alias_pattern(split_aliases(aliases), case_sensitive=False))
-        if split_aliases(case_sensitive):
-            patterns.append(alias_pattern(split_aliases(case_sensitive), case_sensitive=True))
-        vocabulary.append((skill, patterns))
+    with open(vocabulary_csv, newline="", encoding="utf-8") as file:
+        for row in csv.DictReader(file):
+            patterns = []
+            if split_aliases(row["aliases"]):
+                patterns.append(alias_pattern(split_aliases(row["aliases"]), case_sensitive=False))
+            if split_aliases(row["case_sensitive_aliases"]):
+                patterns.append(alias_pattern(split_aliases(row["case_sensitive_aliases"]), case_sensitive=True))
+            vocabulary.append((row["skill"], patterns))
     return vocabulary
 
 

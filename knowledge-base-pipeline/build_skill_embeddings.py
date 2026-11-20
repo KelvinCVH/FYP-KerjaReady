@@ -1,7 +1,8 @@
 """Build the skill embedding folder used for semantic skill matching (KR-94).
 
 Downloads the int8 ONNX export of granite-embedding-small-english-r2 from Hugging Face, embeds every skill name
-in the vocabulary with the same code the assess-resume Lambda uses, and runs a small sanity check.
+in the vocabulary with the same code the assess-resume Lambda uses, and runs a small sanity check. A copy of the
+vocabulary goes in the folder too, so the rule-based and semantic matches in the Lambda use the same skills.
 
 Usage (from the repo root):
     python knowledge-base-pipeline/build_skill_embeddings.py knowledge-base-pipeline/skill_vocabulary.csv
@@ -10,7 +11,6 @@ The folder name becomes the version. Rebuild with --revision <commit> to get the
 """
 
 import argparse
-import csv
 import json
 import shutil
 import sys
@@ -24,6 +24,7 @@ from huggingface_hub import HfApi, hf_hub_download
 # Same embedding code as the Lambda, so skill vectors and resume line vectors always match
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend" / "functions" / "assess-resume"))
 from skill_embedding_model import SkillEmbeddingModel  # noqa: E402
+from skill_matching import load_vocabulary  # noqa: E402
 
 MODEL_ID = "onnx-community/granite-embedding-small-english-r2-ONNX"
 MODEL_FILE = "model_quantized.onnx"  # int8; the weights are in model_quantized.onnx_data next to it
@@ -43,8 +44,7 @@ SANITY_PAIRS = [
 
 
 def read_skill_names(vocabulary_csv):
-    with open(vocabulary_csv, newline="", encoding="utf-8") as file:
-        names = [row["skill"].strip() for row in csv.DictReader(file)]
+    names = [skill for skill, _ in load_vocabulary(vocabulary_csv)]
     if len(names) != len(set(names)):
         raise ValueError("Skill names in the vocabulary must be unique")
     return names
@@ -90,6 +90,7 @@ def main():
     (out / "embedding_config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
 
     names = read_skill_names(args.vocabulary_csv)
+    shutil.copy(args.vocabulary_csv, out / "skill_vocabulary.csv")
     started = time.time()
     model = SkillEmbeddingModel(out)
     loaded = time.time()
