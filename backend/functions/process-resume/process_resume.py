@@ -5,9 +5,13 @@ Rate an uploaded resume in the background. Two ways in:
 
 1. Claim the resume with one conditional UPDATE: -> reading. A repeated event finds nothing to claim.
 2. kerjaready-assess-resume reads the PDF. The text is saved on the resume row. -> rating
-3. kerjaready-assess-resume rates the text. The ratings are saved in resume_ratings. -> done
+3. kerjaready-assess-resume rates the text and finds the skills it evidences. The ratings are saved in
+   resume_ratings and the skills in resume_skills. -> done
 Any failure -> failed, with failure_reason not_pdf, no_text or error. Errors are logged and never re-raised:
 the async invoke must not retry the run. The candidate retries it with the Retry button.
+
+{"match_skills": <resume_id>} matches the skills of an assessed resume again, without changing its status or
+ratings (scripts/rematch_resume_skills.py). Its errors are raised, so the caller sees them.
 """
 
 import json
@@ -91,6 +95,46 @@ def save_ratings(resume_id, ratings):
     )
 
 
+def save_resume_skills(resume_id, skills):
+    """Replace the resume's skills. Skill names become skill ids inside the INSERT; returns how many were saved."""
+    run_query("DELETE FROM resume_skills WHERE resume_id = :resume_id", _parameters(resume_id=resume_id))
+    if not skills:
+        return 0
+    saved = run_query(
+        "INSERT INTO resume_skills (resume_id, skill_id, evidence_excerpt, match_method) "
+        "SELECT :resume_id, s.skill_id, m.evidence, m.method "
+        "FROM jsonb_to_recordset(CAST(:skills AS jsonb)) AS m(skill text, evidence text, method text) "
+        "JOIN skills s ON s.name = m.skill "
+        "RETURNING skill_id",
+        _parameters(resume_id=resume_id, skills=json.dumps(skills)),
+    )
+    if len(saved) < len(skills):
+        # A skill name missing from the skills table: the vocabulary in the container and the database differ
+        print(json.dumps({"resume_id": resume_id, "skills_not_saved": len(skills) - len(saved)}))
+    return len(saved)
+
+
+def match_skills_again(resume_id):
+    """Match the skills of an assessed resume again. Status and ratings stay as they are."""
+    rows = run_query(
+        f"SELECT extracted_text FROM resumes WHERE resume_id = :resume_id AND status = '{DONE}'",
+        _parameters(resume_id=resume_id),
+    )
+    if not rows or not rows[0].get("extracted_text"):
+        return {"resume_id": resume_id, "skipped": "not an assessed resume"}
+    matched = assess({"action": "match_skills", "text": rows[0]["extracted_text"]})
+    methods = [skill["method"] for skill in matched["skills"]]
+    result = {
+        "resume_id": resume_id,
+        "saved": save_resume_skills(resume_id, matched["skills"]),
+        "lexical": methods.count("lexical"),
+        "semantic": methods.count("semantic"),
+        "skill_embedding_version": matched.get("skill_embedding_version"),
+    }
+    print(json.dumps(result))
+    return result
+
+
 def claim_upload(key):
     """S3 path: claim the row whose file just arrived. Returns the resume id, or None."""
     rows = run_query(
@@ -132,7 +176,9 @@ def run(resume_id, bucket, key):
 
     try:
         ratings = assess({"text": extracted["text"], "pdf_links": extracted.get("pdf_links") or []})
+        matched = assess({"action": "match_skills", "text": extracted["text"]})
         save_ratings(resume_id, ratings)
+        save_resume_skills(resume_id, matched["skills"])
         set_status(resume_id, DONE)
         print(json.dumps({"resume_id": resume_id, "status": DONE}))
     except Exception:
@@ -142,6 +188,9 @@ def run(resume_id, bucket, key):
 
 
 def handler(event, context=None):
+    if "match_skills" in event:
+        return match_skills_again(int(event["match_skills"]))
+
     if "resume_id" in event:
         resume_id = int(event["resume_id"])
         key = claim_retry(resume_id)
