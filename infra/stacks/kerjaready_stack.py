@@ -469,6 +469,23 @@ class KerjaReadyStack(Stack):
             ),
         )
 
+        # Candidate: skills in their target role profile, evidenced or not evidenced in one assessed resume
+        get_skill_gap_function = self._create_python_function(
+            "GetSkillGapFunction",
+            "get-skill-gap",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(get_skill_gap_function)
+        self.http_api.add_routes(
+            path="/candidate/resumes/{resume_id}/skill-gap",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "GetSkillGapIntegration", get_skill_gap_function
+            ),
+        )
+                
         # Resume assessment in the background thatt calls assess-resume to read the PDF and then to rate it.
         # The timeout stays below STALE_AFTER_SECONDS (120 s, kerjaready_shared/resume_status.py), so a run
         # reported as timed out has really stopped before Retry starts another one.
