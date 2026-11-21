@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 import match_resume_skills as matching
-from match_resume_skills import match_resume_skills, semantic_lines
+from match_resume_skills import evidence_text, match_resume_skills, semantic_lines
 from skill_matching import find_skills, load_vocabulary
 
 VOCABULARY_CSV = Path(__file__).resolve().parents[3] / "knowledge-base-pipeline" / "skill_vocabulary.csv"
@@ -78,3 +78,15 @@ def test_relative_score_is_how_far_a_skill_stands_out_on_its_line():
     scores = matching.line_skill_scores(["Built dashboards for the sales team"], FakeEmbedder())
     assert scores["relative"][0].argmax() == 1
     assert np.isclose(scores["relative"][0].mean(), 0.0, atol=1e-6)
+
+
+@pytest.mark.parametrize("line, shown", [
+    ("ò Involved in UI/UX design for the client.", "Involved in UI/UX design for the client."),
+    ("•  Built Power BI dashboards", "Built Power BI dashboards"),
+    ("- Wrote unit tests in pytest", "Wrote unit tests in pytest"),
+    ("$2M budget managed for the rollout", "$2M budget managed for the rollout"),
+    ("C++ developer for embedded firmware", "C++ developer for embedded firmware"),
+    ("(Python) data cleaning scripts", "(Python) data cleaning scripts"),
+])
+def test_evidence_lines_lose_only_a_leading_bullet(line, shown):
+    assert evidence_text(line) == shown
