@@ -4,8 +4,15 @@ import { apiGet } from "./apiClient";
 // or a resume line close in meaning (semantic)
 export type MatchMethod = "lexical" | "implied" | "semantic";
 
-// The candidate's saved target role, with the number of entry-level Malaysian postings its skill profile comes from
-export type SkillGapRole = { role_id: number; title: string; posting_count: number };
+// The candidate's saved target role, with the entry-level Malaysian JobStreet postings its skill profile comes from
+export type SkillGapRole = {
+  role_id: number;
+  title: string;
+  posting_count: number;
+  // The earliest and latest posting dates, "YYYY-MM-DD"; null when the role has no postings
+  first_posted: string | null;
+  last_posted: string | null;
+};
 
 // One skill in the role profile and how often the role's postings ask for it
 export type SkillDemand = {
