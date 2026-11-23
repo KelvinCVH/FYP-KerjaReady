@@ -2,9 +2,13 @@
 GET /candidate/resumes/{resume_id}/skill-gap: the skills in the candidate's saved target role profile, split into
 those evidenced in this resume and those not evidenced, each group ordered by demand share (highest first).
 
-A skill is evidenced when the assessment found it in the resume (a row in resume_skills,lexical, implied, or semantic),
+A skill is evidenced when the assessment found it in the resume (a row in resume_skills: lexical, implied or semantic),
 and the matching resume line comes back with it. A skill that was not found is "not evidenced in the resume":
 the candidate may still have it.
+
+Every skill has demand_share, the share of the role's postings that ask for it, and postings, the number of those
+postings. demand_share is that number divided by posting_count, stored to 4 decimal places, so
+round(demand_share * posting_count) gives the number back exactly while a role has fewer than 10,000 postings.
 
 - 404 when the resume is missing, still uploading or another candidate's
 - 409 when its assessment has not finished, because skills are found during the assessment
@@ -62,9 +66,15 @@ def handler(event, user):
     if row.get("role_id") is None:
         return 200, result
 
-    result["target_role"] = {"role_id": row["role_id"], "title": row["title"], "posting_count": row["posting_count"]}
+    posting_count = row["posting_count"]
+    result["target_role"] = {"role_id": row["role_id"], "title": row["title"], "posting_count": posting_count}
     for skill in run_query(ROLE_SKILLS, [_long("resume_id", resume_id), _long("role_id", row["role_id"])]):
-        entry = {"skill_id": skill["skill_id"], "name": skill["name"], "demand_share": skill["demand_share"]}
+        entry = {
+            "skill_id": skill["skill_id"],
+            "name": skill["name"],
+            "demand_share": skill["demand_share"],
+            "postings": round(skill["demand_share"] * posting_count),
+        }
         if skill.get("evidence") is None:
             result["not_evidenced"].append(entry)
         else:

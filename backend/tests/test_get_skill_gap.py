@@ -5,13 +5,16 @@ from conftest import USER_ID, FakeDatabase, candidate_event, load_function
 get_skill_gap = load_function("get-skill-gap")
 ROUTE = "GET /candidate/resumes/{resume_id}/skill-gap"
 
-ROLE_ROW = {"status": "done", "role_id": 4, "title": "Data Analyst", "posting_count": 120}
-SKILL_ROWS = [  # as the database orders them: demand share, highest first
-    {"skill_id": 1, "name": "SQL", "demand_share": 0.62, "evidence": "Skills: Python, SQL", "match_method": "lexical"},
-    {"skill_id": 2, "name": "Tableau", "demand_share": 0.41},
-    {"skill_id": 3, "name": "Data visualisation", "demand_share": 0.3,
+POSTING_COUNT = 52
+ROLE_ROW = {"status": "done", "role_id": 4, "title": "Data Analyst", "posting_count": POSTING_COUNT}
+# As the database orders them, demand share highest first. Shares are stored to 4 dp, as the pipeline writes them:
+# 41/52 = 0.7885, 14/52 = 0.2692, 9/52 = 0.1731, 7/52 = 0.1346
+SKILL_ROWS = [
+    {"skill_id": 1, "name": "SQL", "demand_share": 0.7885, "evidence": "Skills: Python, SQL", "match_method": "lexical"},
+    {"skill_id": 2, "name": "Tableau", "demand_share": 0.2692},
+    {"skill_id": 3, "name": "Data visualisation", "demand_share": 0.1731,
      "evidence": "Built Power BI dashboards for sales", "match_method": "semantic"},
-    {"skill_id": 4, "name": "Statistics", "demand_share": 0.12},
+    {"skill_id": 4, "name": "Statistics", "demand_share": 0.1346},
 ]
 
 
@@ -33,16 +36,27 @@ def test_skills_split_into_evidenced_and_not_evidenced_in_demand_order(monkeypat
     status, body = call(monkeypatch, database_with(ROLE_ROW))
 
     assert status == 200
-    assert body["target_role"] == {"role_id": 4, "title": "Data Analyst", "posting_count": 120}
+    assert body["target_role"] == {"role_id": 4, "title": "Data Analyst", "posting_count": POSTING_COUNT}
     assert body["evidenced"] == [
-        {"skill_id": 1, "name": "SQL", "demand_share": 0.62, "evidence": "Skills: Python, SQL", "match_method": "lexical"},
-        {"skill_id": 3, "name": "Data visualisation", "demand_share": 0.3,
+        {"skill_id": 1, "name": "SQL", "demand_share": 0.7885, "postings": 41,
+         "evidence": "Skills: Python, SQL", "match_method": "lexical"},
+        {"skill_id": 3, "name": "Data visualisation", "demand_share": 0.1731, "postings": 9,
          "evidence": "Built Power BI dashboards for sales", "match_method": "semantic"},
     ]
     assert body["not_evidenced"] == [
-        {"skill_id": 2, "name": "Tableau", "demand_share": 0.41},
-        {"skill_id": 4, "name": "Statistics", "demand_share": 0.12},
+        {"skill_id": 2, "name": "Tableau", "demand_share": 0.2692, "postings": 14},
+        {"skill_id": 4, "name": "Statistics", "demand_share": 0.1346, "postings": 7},
     ]
+
+
+def test_postings_give_back_the_exact_count_behind_each_4dp_share(monkeypatch):
+    # Every possible count for a 52-posting role, with its share rounded to 4 dp as the pipeline stores it
+    rows = [{"skill_id": count, "name": f"Skill {count}", "demand_share": round(count / POSTING_COUNT, 4)}
+            for count in range(POSTING_COUNT, -1, -1)]
+    _, body = call(monkeypatch, database_with(ROLE_ROW, rows))
+
+    assert [skill["postings"] for skill in body["not_evidenced"]] == list(range(POSTING_COUNT, -1, -1))
+    assert all(isinstance(skill["postings"], int) for skill in body["not_evidenced"])
 
 
 def test_every_role_skill_appears_in_exactly_one_group(monkeypatch):
