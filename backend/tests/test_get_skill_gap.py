@@ -6,7 +6,8 @@ get_skill_gap = load_function("get-skill-gap")
 ROUTE = "GET /candidate/resumes/{resume_id}/skill-gap"
 
 POSTING_COUNT = 52
-ROLE_ROW = {"status": "done", "role_id": 4, "title": "Data Analyst", "posting_count": POSTING_COUNT}
+ROLE_ROW = {"status": "done", "role_id": 4, "title": "Data Analyst", "posting_count": POSTING_COUNT,
+            "first_posted": "2024-02-01", "last_posted": "2026-10-28"}
 # As the database orders them, demand share highest first. Shares are stored to 4 dp, as the pipeline writes them:
 # 41/52 = 0.7885, 14/52 = 0.2692, 9/52 = 0.1731, 7/52 = 0.1346
 SKILL_ROWS = [
@@ -36,7 +37,8 @@ def test_skills_split_into_evidenced_and_not_evidenced_in_demand_order(monkeypat
     status, body = call(monkeypatch, database_with(ROLE_ROW))
 
     assert status == 200
-    assert body["target_role"] == {"role_id": 4, "title": "Data Analyst", "posting_count": POSTING_COUNT}
+    assert body["target_role"] == {"role_id": 4, "title": "Data Analyst", "posting_count": POSTING_COUNT,
+                                   "first_posted": "2024-02-01", "last_posted": "2026-10-28"}
     assert body["evidenced"] == [
         {"skill_id": 1, "name": "SQL", "demand_share": 0.7885, "postings": 41,
          "evidence": "Skills: Python, SQL", "match_method": "lexical"},
@@ -75,6 +77,26 @@ def test_queries_are_limited_to_the_candidate_their_resume_and_their_role(monkey
     assert resume_params == {"resume_id": 7, "user_id": USER_ID}
     assert "LEFT JOIN resume_skills" in skills_sql and "ORDER BY rq.demand_share DESC" in skills_sql
     assert skills_params == {"resume_id": 7, "role_id": 4}
+
+
+def test_posting_date_range_is_the_first_and_last_posted_date_of_the_role(monkeypatch):
+    database = database_with(ROLE_ROW)
+    call(monkeypatch, database)
+
+    resume_sql, _ = database.queries[0]
+    assert "to_char(min(jp.posted_date), 'YYYY-MM-DD') AS first_posted" in resume_sql
+    assert "to_char(max(jp.posted_date), 'YYYY-MM-DD') AS last_posted" in resume_sql
+    assert "WHERE jp.role_id = u.target_role_id" in resume_sql
+
+
+def test_role_without_postings_gives_null_dates(monkeypatch):
+    database = database_with({**ROLE_ROW, "posting_count": 0, "first_posted": None, "last_posted": None}, [])
+    status, body = call(monkeypatch, database)
+
+    assert status == 200
+    assert body["target_role"] == {"role_id": 4, "title": "Data Analyst", "posting_count": 0,
+                                   "first_posted": None, "last_posted": None}
+    assert body["evidenced"] == [] and body["not_evidenced"] == []
 
 
 def test_no_target_role_gives_empty_groups_without_a_skill_query(monkeypatch):

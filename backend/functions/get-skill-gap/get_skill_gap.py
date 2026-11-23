@@ -10,6 +10,10 @@ Every skill has demand_share, the share of the role's postings that ask for it, 
 postings. demand_share is that number divided by posting_count, stored to 4 decimal places, so
 round(demand_share * posting_count) gives the number back exactly while a role has fewer than 10,000 postings.
 
+target_role also says where those numbers come from: posting_count entry-level JobStreet postings in Malaysia, posted
+from first_posted to last_posted (the earliest and latest posted_date, as "YYYY-MM-DD"). Both dates are null when
+the role has no postings.
+
 - 404 when the resume is missing, still uploading or another candidate's
 - 409 when its assessment has not finished, because skills are found during the assessment
 - target_role null and two empty groups when the candidate has not chosen a target role
@@ -22,12 +26,21 @@ from kerjaready_shared.resume_status import DONE, UPLOADING
 NOT_FOUND = {"message": "We couldn’t find that resume."}
 NOT_ASSESSED = {"message": "This resume hasn’t finished its assessment yet."}
 
+# One pass over the role's postings gives their count and date range. to_char keeps the dates as "YYYY-MM-DD";
+# both are NULL when the role has no postings.
 RESUME_AND_ROLE = """
 SELECT r.status, u.target_role_id AS role_id, ro.title,
-       (SELECT count(*) FROM job_postings p WHERE p.role_id = u.target_role_id) AS posting_count
+       p.posting_count, p.first_posted, p.last_posted
 FROM resumes r
 JOIN users u ON u.user_id = r.candidate_id
 LEFT JOIN roles ro ON ro.role_id = u.target_role_id
+LEFT JOIN LATERAL (
+    SELECT count(*) AS posting_count,
+           to_char(min(jp.posted_date), 'YYYY-MM-DD') AS first_posted,
+           to_char(max(jp.posted_date), 'YYYY-MM-DD') AS last_posted
+    FROM job_postings jp
+    WHERE jp.role_id = u.target_role_id
+) p ON true
 WHERE r.resume_id = :resume_id AND r.candidate_id = CAST(:user_id AS uuid)
 """
 
@@ -67,7 +80,13 @@ def handler(event, user):
         return 200, result
 
     posting_count = row["posting_count"]
-    result["target_role"] = {"role_id": row["role_id"], "title": row["title"], "posting_count": posting_count}
+    result["target_role"] = {
+        "role_id": row["role_id"],
+        "title": row["title"],
+        "posting_count": posting_count,
+        "first_posted": row.get("first_posted"),
+        "last_posted": row.get("last_posted"),
+    }
     for skill in run_query(ROLE_SKILLS, [_long("resume_id", resume_id), _long("role_id", row["role_id"])]):
         entry = {
             "skill_id": skill["skill_id"],
