@@ -2,7 +2,7 @@
 GET /candidate/resumes/{resume_id}/skill-gap: the skills in the candidate's saved target role profile, split into
 those evidenced in this resume and those not evidenced, each group ordered by demand share (highest first).
 
-A skill is evidenced when the assessment found it in the resume (a row in resume_skills, rule-based or semantic),
+A skill is evidenced when the assessment found it in the resume (a row in resume_skills,lexical, implied, or semantic),
 and the matching resume line comes back with it. A skill that was not found is "not evidenced in the resume":
 the candidate may still have it.
 
