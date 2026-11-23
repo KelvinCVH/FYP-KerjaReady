@@ -1,4 +1,8 @@
-"""Skills evidenced in a resume: a rule-based match with the skill vocabulary, then a semantic match for the rest.
+"""Skills evidenced in a resume, in three steps:
+1. Rule-based: a skill's name or alias appears in a line of the resume.
+2. Implied: a skill found in step 1 implies a broader one in the curated list (PyTorch -> Machine learning).
+   The broader skill takes the line of the skill that implies it. Implied skills never imply further.
+3. Semantic: for the skills still not found, the resume line closest in meaning, if it reaches the threshold.
 
 The semantic match compares each resume line with each skill name using the skill embedding model, and keeps
 the best line for a skill when its score reaches SEMANTIC_THRESHOLD. The score and threshold were chosen on
@@ -13,7 +17,8 @@ import numpy as np
 from skill_matching import EDUCATION_LINE, find_skills
 
 # "raw" is the cosine similarity; "relative" is how far a skill stands out for a line, in standard deviations
-# above that line's mean similarity to all skills. Calibrated for kerjaready-skill-embedding-20261120 on 264
+# above that line's mean similarity to all skills. Calibrated for granite-embedding-small-english-r2 (int8, commit
+# 1dc7835) with the 281-skill vocabulary, as in kerjaready-skill-embedding-20261120 and later, on 264
 # hand-labelled pairs from 20 test-split resumes: precision 0.84, recall 0.08 at a 0.80 precision target
 # (knowledge-base-pipeline/reports/skill-match-calibration). A new model or vocabulary needs a new calibration.
 SEMANTIC_SCORE = "raw"
@@ -52,18 +57,22 @@ def line_skill_scores(lines, embedder):
     return {"raw": raw, "relative": (raw - raw.mean(axis=1, keepdims=True)) / spread}
 
 
-def match_resume_skills(text, vocabulary, embedder):
-    """[{"skill", "evidence", "method"}] for each skill evidenced in the resume, rule-based matches first."""
-    matches = [
-        {"skill": skill, "evidence": evidence_text(line), "method": "lexical"}
-        for skill, line in find_skills(text, vocabulary).items()
-    ]
+def match_resume_skills(text, vocabulary, embedder, implications):
+    """[{"skill", "evidence", "method"}] for each skill evidenced in the resume: lexical, then implied, then semantic."""
+    lexical = find_skills(text, vocabulary)
+    matches = [{"skill": skill, "evidence": evidence_text(line), "method": "lexical"} for skill, line in lexical.items()]
+    found = set(lexical)
+    for skill, line in lexical.items():
+        for broader in implications.get(skill, []):
+            if broader not in found:
+                found.add(broader)
+                matches.append({"skill": broader, "evidence": evidence_text(line), "method": "implied"})
+
     lines = semantic_lines(text) if SEMANTIC_THRESHOLD is not None else []
     if not lines:
         return matches
 
     scores = line_skill_scores(lines, embedder)[SEMANTIC_SCORE]
-    found = {match["skill"] for match in matches}
     for column, skill in enumerate(embedder.skill_names):
         best = int(np.argmax(scores[:, column]))
         if skill not in found and scores[best, column] >= SEMANTIC_THRESHOLD:

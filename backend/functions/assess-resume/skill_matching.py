@@ -45,6 +45,18 @@ def load_vocabulary(vocabulary_csv):
     return vocabulary
 
 
+def load_implications(implications_csv, skill_names):
+    """{skill: [broader skills it implies]} from the curated list, in file order. Every name must be a vocabulary skill."""
+    known, implications = set(skill_names), {}
+    with open(implications_csv, newline="", encoding="utf-8") as file:
+        for row in csv.DictReader(file):
+            unknown = {row["skill"], row["implies"]} - known
+            if unknown:
+                raise ValueError(f"skill_implications.csv names skills not in the vocabulary: {sorted(unknown)}")
+            implications.setdefault(row["skill"], []).append(row["implies"])
+    return implications
+
+
 def find_skills(text, vocabulary):
     """Each skill found in the text, with the first line it appears in."""
     found = {}

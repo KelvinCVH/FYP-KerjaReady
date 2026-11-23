@@ -2,7 +2,8 @@
 
 Downloads the int8 ONNX export of granite-embedding-small-english-r2 from Hugging Face, embeds every skill name
 in the vocabulary with the same code the assess-resume Lambda uses, and runs a small sanity check. A copy of the
-vocabulary goes in the folder too, so the rule-based and semantic matches in the Lambda use the same skills.
+vocabulary and of the implied-skill list (skill_implications.csv, next to the vocabulary) go in the folder too,
+so every match step in the Lambda uses the same skills.
 
 Usage (from the repo root):
     python knowledge-base-pipeline/build_skill_embeddings.py knowledge-base-pipeline/skill_vocabulary.csv
@@ -12,6 +13,7 @@ The folder name becomes the version. Rebuild with --revision <commit> to get the
 
 import argparse
 import json
+import re
 import shutil
 import sys
 import time
@@ -24,11 +26,12 @@ from huggingface_hub import HfApi, hf_hub_download
 # Same embedding code as the Lambda, so skill vectors and resume line vectors always match
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend" / "functions" / "assess-resume"))
 from skill_embedding_model import SkillEmbeddingModel  # noqa: E402
-from skill_matching import load_vocabulary  # noqa: E402
+from skill_matching import load_implications, load_vocabulary  # noqa: E402
 
 MODEL_ID = "onnx-community/granite-embedding-small-english-r2-ONNX"
 MODEL_FILE = "model_quantized.onnx"  # int8; the weights are in model_quantized.onnx_data next to it
 FILES = [f"onnx/{MODEL_FILE}", f"onnx/{MODEL_FILE}_data", "tokenizer.json"]
+FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 
 # (skill, a line that evidences it, a line that does not): the first line should score higher
 SANITY_PAIRS = [
@@ -51,8 +54,9 @@ def read_skill_names(vocabulary_csv):
 
 
 def download_model(out, revision):
-    """Copy the model files into out; return the full commit they came from."""
-    commit = HfApi().model_info(MODEL_ID, revision=revision).sha
+    """Copy the model files into out; return the full commit they came from. With a full commit, files already
+    in the local Hugging Face cache are used without contacting the Hub, so a rebuild works offline."""
+    commit = revision if FULL_COMMIT.fullmatch(revision) else HfApi().model_info(MODEL_ID, revision=revision).sha
     for name in FILES:
         shutil.copy(hf_hub_download(MODEL_ID, name, revision=commit), out / Path(name).name)
     model_config = json.loads(Path(hf_hub_download(MODEL_ID, "config.json", revision=commit)).read_text(encoding="utf-8"))
@@ -91,6 +95,9 @@ def main():
 
     names = read_skill_names(args.vocabulary_csv)
     shutil.copy(args.vocabulary_csv, out / "skill_vocabulary.csv")
+    implications_csv = Path(args.vocabulary_csv).with_name("skill_implications.csv")
+    implied = load_implications(implications_csv, names)  # stops here if a name is not in the vocabulary
+    shutil.copy(implications_csv, out / "skill_implications.csv")
     started = time.time()
     model = SkillEmbeddingModel(out)
     loaded = time.time()
@@ -98,7 +105,8 @@ def main():
     np.save(out / "skill_vectors.npy", vectors)
     (out / "skill_names.json").write_text(json.dumps(names, indent=1), encoding="utf-8")
     print(f"Model {MODEL_ID} at {commit[:7]}: loaded in {loaded - started:.1f} s, "
-          f"{len(names)} skills embedded in {time.time() - loaded:.1f} s -> {out}")
+          f"{len(names)} skills embedded in {time.time() - loaded:.1f} s, "
+          f"{sum(len(v) for v in implied.values())} implied-skill pairs -> {out}")
 
     sanity_check(model)
 

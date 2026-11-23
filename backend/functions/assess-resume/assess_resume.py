@@ -11,7 +11,7 @@ Returns: {"a1": 0-3, "a2": 0-3, "a3": 0-3, "b2": 1-3, "a1_work_link": url or nul
           "b2_errors": [{"text", "rule", "message"}, ...], "model_version": "<training job>"}
 
 Match:   {"action": "match_skills", "text": "<resume text>"}
-Returns: {"skills": [{"skill", "evidence", "method": "lexical" | "semantic"}, ...],
+Returns: {"skills": [{"skill", "evidence", "method": "lexical" | "implied" | "semantic"}, ...],
           "skill_embedding_version": "<version>"}
 
 LanguageTool runs as a local Java server inside the same container. It is started in the background
@@ -32,7 +32,7 @@ from onnx_rating_model import OnnxRatingModel
 from match_resume_skills import match_resume_skills
 from read_resume_pdf import UnreadablePdf, read_resume_pdf
 from skill_embedding_model import SkillEmbeddingModel
-from skill_matching import load_vocabulary
+from skill_matching import load_implications, load_vocabulary
 
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", Path(__file__).resolve().parent / "model"))
 SKILL_EMBEDDING_DIR = Path(os.environ.get("SKILL_EMBEDDING_DIR", Path(__file__).resolve().parent / "skill_embedding"))
@@ -46,6 +46,7 @@ s3 = boto3.client("s3")
 _languagetool = None
 _skill_embedding = None
 _vocabulary = None
+_implications = None
 
 def start_languagetool():
     """Start the bundled LanguageTool server if it is not running. Without the bundle (local development),
@@ -96,13 +97,22 @@ def get_vocabulary():
     return _vocabulary
 
 
+def get_implications():
+    """The curated list of skills that imply broader ones, saved with the vocabulary."""
+    global _implications
+    if _implications is None:
+        names = [skill for skill, _ in get_vocabulary()]
+        _implications = load_implications(SKILL_EMBEDDING_DIR / "skill_implications.csv", names)
+    return _implications
+
+
 def match_skills(text):
     """The skills the resume evidences, each with the line that evidences it."""
     started = time.time()
-    skills = match_resume_skills(text, get_vocabulary(), get_skill_embedding())
+    skills = match_resume_skills(text, get_vocabulary(), get_skill_embedding(), get_implications())
     # log counts and timing only, never the resume text
     methods = [skill["method"] for skill in skills]
-    print(json.dumps({"skills": {"lexical": methods.count("lexical"), "semantic": methods.count("semantic")},
+    print(json.dumps({"skills": {method: methods.count(method) for method in ("lexical", "implied", "semantic")},
                       "seconds": round(time.time() - started, 2)}))
     return {"skills": skills, "skill_embedding_version": get_skill_embedding().version}
 
