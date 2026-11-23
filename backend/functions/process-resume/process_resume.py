@@ -128,6 +128,7 @@ def match_skills_again(resume_id):
         "resume_id": resume_id,
         "saved": save_resume_skills(resume_id, matched["skills"]),
         "lexical": methods.count("lexical"),
+        "implied": methods.count("implied"),
         "semantic": methods.count("semantic"),
         "skill_embedding_version": matched.get("skill_embedding_version"),
     }

@@ -188,7 +188,7 @@ def test_match_skills_again_saves_skills_and_leaves_the_status(monkeypatch):
     assert len(pipeline.skill_queries()) == 2
     assert pipeline.statuses() == []
     assert not any(sql.startswith("INSERT INTO resume_ratings") for sql, _ in pipeline.database.queries)
-    assert result == {"resume_id": 7, "saved": 2, "lexical": 1, "semantic": 1,
+    assert result == {"resume_id": 7, "saved": 2, "lexical": 1, "implied": 0, "semantic": 1,
                       "skill_embedding_version": "kerjaready-skill-embedding-test"}
 
 
