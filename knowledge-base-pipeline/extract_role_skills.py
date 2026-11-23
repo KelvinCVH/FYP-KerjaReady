@@ -6,9 +6,11 @@ Usage:
 """
 
 import argparse
-
+import sys
+from pathlib import Path
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend" / "functions" / "assess-resume"))
 from skill_matching import find_skills, load_vocabulary
 
 # A skill joins a role profile only when enough of the role's postings ask for it

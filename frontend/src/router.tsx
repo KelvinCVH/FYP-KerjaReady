@@ -78,7 +78,8 @@ export const router = createBrowserRouter([
       { path: "resume/:resumeId?", element: <ResumePage /> },
       { path: "resume/target-role", element: <SelectTargetRolePage /> },
       { path: "resume/result", element: <ResumeResultPage /> },
-      { path: "skill-gap", element: <SkillGapPage /> },
+      // The newest assessed resume, or another assessed one by id: the same page either way
+      { path: "skill-gap/:resumeId?", element: <SkillGapPage /> },
       { path: "roadmap", element: <RoadmapPage /> },
       { path: "jobs", element: <JobsPage /> },
       { path: "jobs/:listingId", element: <JobsPage /> },
