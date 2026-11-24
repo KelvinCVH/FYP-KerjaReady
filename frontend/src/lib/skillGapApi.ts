@@ -4,7 +4,7 @@ import { apiGet } from "./apiClient";
 // or a resume line close in meaning (semantic)
 export type MatchMethod = "lexical" | "implied" | "semantic";
 
-// The candidate's saved target role, with the entry-level Malaysian JobStreet postings its skill profile comes from
+// The candidate's saved target role, with the entry-level Malaysian job postings its skill profile comes from
 export type SkillGapRole = {
   role_id: number;
   title: string;
@@ -28,13 +28,31 @@ export type SkillDemand = {
 // The line is resume content: show it on the page, never log it.
 export type EvidencedSkill = SkillDemand & { evidence: string; match_method: MatchMethod };
 
+// A job posting line an explanation is based on
+export type ExplanationSource = {
+  posting_id: number;
+  line: string;
+  job_title: string;
+  // "YYYY-MM-DD"
+  posted_date: string;
+};
+
+// A skill this resume does not show, with why the role asks for it. The explanation was written once with AI from
+// the role's job postings and stored; it is null, with no sources, when the skill has none.
+export type NotEvidencedSkill = SkillDemand & {
+  why_it_matters: string | null;
+  how_to_show: string | null;
+  // At most 3, newest posting first
+  sources: ExplanationSource[];
+};
+
 export type SkillGap = {
   resume_id: number;
   // null when the candidate hasn't chosen a target role; both lists are then empty
   target_role: SkillGapRole | null;
   // Both ordered by demand share, highest first, then by name
   evidenced: EvidencedSkill[];
-  not_evidenced: SkillDemand[];
+  not_evidenced: NotEvidencedSkill[];
 };
 
 // The skills of the candidate's saved target role, split by whether this resume evidences them.
