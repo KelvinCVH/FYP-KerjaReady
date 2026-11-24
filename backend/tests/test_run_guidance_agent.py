@@ -13,6 +13,13 @@ import run_guidance_agent  # noqa: E402
 import smoke_test_task  # noqa: E402
 
 ASSESSED = {"candidate_id": USER_ID, "role_id": 4, "status": "done"}
+MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+
+@pytest.fixture(autouse=True)
+def guidance_model(monkeypatch):
+    """The stack sets the model; the tests set the one it uses today."""
+    monkeypatch.setenv("GUIDANCE_MODEL_ID", MODEL_ID)
 OUTPUT = {"role_title": "AI/ML Engineer", "skill_count": 32, "summary": "AI/ML Engineer lists 32 skills."}
 
 
@@ -61,7 +68,7 @@ def test_a_run_is_recorded_with_its_model_output_and_usage(monkeypatch, agent_ca
     assert lookup == {"resume_id": 9}
     assert start == {
         "candidate_id": USER_ID, "resume_id": 9, "role_id": 4, "output_type": "smoke_test",
-        "model_id": "global.anthropic.claude-haiku-5-5", "prompt_version": "smoke-test-v1",
+        "model_id": MODEL_ID, "prompt_version": "smoke-test-v1",
     }
     assert "status = 'done'" in finish_sql
     assert json.loads(finish["output"]) == OUTPUT
@@ -126,11 +133,11 @@ def test_the_structured_output_call_is_never_counted_or_cancelled():
     assert limit.calls == 1
 
 
-def test_the_agent_uses_haiku_through_converse_with_the_limit_hook():
+def test_the_agent_uses_the_stacks_model_through_converse():
     limit = guidance_agent.ToolCallLimit(output_tool="OutputModel")
     agent = guidance_agent.build_agent("System.", smoke_test_task.make_tools(9, 4), limit)
 
-    assert agent.model.config["model_id"] == "global.anthropic.claude-haiku-5-5"
+    assert agent.model.config["model_id"] == MODEL_ID
     assert agent.model.config["streaming"] is False
     assert agent.tool_names == ["get_target_role_profile"]
 

@@ -1,6 +1,7 @@
-"""The guidance agent's model and limits (KR-97): Strands on Claude Haiku 5.5 in Amazon Bedrock.
+"""The guidance agent's model and limits (KR-97): Strands on Claude Haiku in Amazon Bedrock.
 
-Claude is not served in-Region in ap-southeast-5, so calls go through the global cross-Region inference profile,
+The model comes from GUIDANCE_MODEL_ID, set by the stack (GUIDANCE_MODEL in kerjaready_stack.py): Claude Haiku
+4.5 until AWS enables Claude Haiku 5.5 for this account. Claude is not served in-Region in ap-southeast-5, so calls go through the global cross-Region inference profile,
 which can process a request in any commercial AWS Region. The agent's tools must therefore return no resume text,
 file names or personal details: only skill names, match types, ratings, posting counts and job posting lines.
 """
@@ -12,7 +13,6 @@ from strands import Agent
 from strands.hooks import BeforeInvocationEvent, BeforeToolCallEvent, HookProvider, HookRegistry
 from strands.models import BedrockModel
 
-MODEL_ID = "global.anthropic.claude-haiku-5-5"
 MAX_TOOL_CALLS = 10
 MAX_TOKENS = 8000
 # One Bedrock call can wait for thinking and a long reply; the Lambda's own timeout bounds the whole run
@@ -49,9 +49,14 @@ class ToolCallLimit(HookProvider):
             )
 
 
+def model_id():
+    """The global inference profile the stack chose, such as global.anthropic.claude-haiku-4-5-20251001-v1:0."""
+    return os.environ["GUIDANCE_MODEL_ID"]
+
+
 def build_agent(system_prompt, tools, limit):
     model = BedrockModel(
-        model_id=MODEL_ID,
+        model_id=model_id(),
         region_name=os.environ.get("AWS_REGION", "ap-southeast-5"),
         max_tokens=MAX_TOKENS,
         # Converse rather than ConverseStream: the run is in the background, and the role needs only

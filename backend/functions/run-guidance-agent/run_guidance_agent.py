@@ -71,7 +71,7 @@ def handler(event, context):
         resume_id=resume_id,
         role_id=role_id,
         output_type=output_type,
-        model_id=guidance_agent.MODEL_ID,
+        model_id=guidance_agent.model_id(),
         prompt_version=task.PROMPT_VERSION,
     ))[0]["run_id"]
 
