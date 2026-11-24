@@ -1,9 +1,10 @@
-"""The guidance agent's tools (KR-144): the resume's assessment ratings and its skill gap for the target role.
+"""The guidance agent's tools: the resume's assessment ratings and its skill gap for the target role (KR-144),
+and market context for chosen skills: why the role asks for each and the job posting lines behind it (KR-146).
 
 Every tool is bound to the run's resume and role, so the model can never ask about another candidate's data.
 The model is reached through global cross-Region inference, so the tools return no resume text, evidence lines,
-links, language errors, file names or personal details: only criterion levels, skill names, match types and
-posting counts.
+links, language errors, file names or personal details: only criterion levels, skill names, match types,
+posting counts, the stored skill explanations and job posting lines.
 """
 
 import json
@@ -22,6 +23,7 @@ RUBRIC = [
     ("b2_rating", "Language Quality", "Is the writing free of spelling and grammar errors?",
      ["Hard to read", "Several errors", "Minor errors", "No errors found"]),
 ]
+MAX_CONTEXT_SKILLS = 5
 MATCH_TYPES = {"lexical": "named in the resume", "implied": "shown through a related tool", "semantic": "similar wording"}
 
 # Only the four levels: the work link and the language errors hold resume text
@@ -43,6 +45,23 @@ JOIN skills s ON s.skill_id = rq.skill_id
 LEFT JOIN resume_skills rk ON rk.skill_id = rq.skill_id AND rk.resume_id = :resume_id
 WHERE rq.role_id = :role_id
 ORDER BY rq.demand_share DESC, s.name
+"""
+
+# The stored explanations (KR-100) for every skill in the role profile
+EXPLANATIONS = """
+SELECT s.skill_id, s.name, CAST(rq.demand_share AS double precision) AS demand_share,
+       rq.why_it_matters, rq.how_to_show
+FROM role_skills rq
+JOIN skills s ON s.skill_id = rq.skill_id
+WHERE rq.role_id = :role_id
+"""
+# The job posting lines the explanations are based on, newest posting first
+SOURCES = """
+SELECT src.skill_id, src.posting_id, src.line, jp.job_title, to_char(jp.posted_date, 'YYYY-MM') AS posted_month
+FROM role_skill_sources src
+JOIN job_postings jp ON jp.posting_id = src.posting_id
+WHERE src.role_id = :role_id
+ORDER BY src.skill_id, jp.posted_date DESC, src.posting_id
 """
 
 
@@ -80,6 +99,51 @@ def skill_gap(resume_id, role_id):
     return result
 
 
+def market_context(role_id, skills):
+    """Explanations and posting lines for up to MAX_CONTEXT_SKILLS of the role's skills, matched by name."""
+    roles = run_query(ROLE, _id("role_id", role_id))
+    if not roles:
+        return {"error": "The target role was not found."}
+    postings = roles[0]["posting_count"]
+    profile = {row["name"].casefold(): row for row in run_query(EXPLANATIONS, _id("role_id", role_id))}
+
+    found, not_in_role = [], []
+    for name in dict.fromkeys(str(skill).strip() for skill in skills):
+        row = profile.get(name.casefold())
+        if row is None:
+            not_in_role.append(name)
+        elif row not in found:
+            found.append(row)
+    wanted = found[:MAX_CONTEXT_SKILLS]
+
+    lines = {}
+    if wanted:
+        for source in run_query(SOURCES, _id("role_id", role_id)):
+            lines.setdefault(source["skill_id"], []).append({
+                "posting_id": source["posting_id"],
+                "line": source["line"],
+                "job_title": source["job_title"],
+                "posted": source["posted_month"],
+            })
+
+    result = {"skills": [
+        {
+            "skill": row["name"],
+            "postings": round(row["demand_share"] * postings),
+            "role_postings": postings,
+            "why_it_matters": row["why_it_matters"],
+            "how_to_show": row["how_to_show"],
+            "posting_lines": lines.get(row["skill_id"], []),
+        }
+        for row in wanted
+    ]}
+    if not_in_role:
+        result["not_in_role_profile"] = not_in_role
+    if len(found) > MAX_CONTEXT_SKILLS:
+        result["note"] = f"Only the first {MAX_CONTEXT_SKILLS} skills were looked up; ask again for the rest."
+    return result
+
+
 def make_tools(resume_id, role_id):
     @tool
     def get_assessment_ratings() -> str:
@@ -100,4 +164,17 @@ def make_tools(resume_id, role_id):
         """
         return json.dumps(skill_gap(resume_id, role_id))
 
-    return [get_assessment_ratings, get_skill_gap]
+    @tool
+    def get_market_context(skills: list[str]) -> str:
+        """Get why the target role asks for each skill, how to show it in a resume, and the job posting lines
+        behind it.
+
+        The explanations were written once with AI from the role's job postings; each posting line comes with its
+        posting_id, job title and month. Cite posting_id values from here when you use these lines.
+
+        Args:
+            skills: Up to 5 skill names from the target role's profile, as get_skill_gap names them.
+        """
+        return json.dumps(market_context(role_id, skills))
+
+    return [get_assessment_ratings, get_skill_gap, get_market_context]

@@ -24,6 +24,8 @@ OUTPUT = {
     "role_title": "AI/ML Engineer",
     "lowest_criterion": "Outcome",
     "top_skills_not_evidenced": ["TensorFlow", "REST API", "Microsoft Azure"],
+    "top_skill_reason": "AI/ML Engineer postings ask for TensorFlow to train deep learning models.",
+    "source_posting_ids": [901],
     "summary": "AI/ML Engineer; Outcome is lowest; TensorFlow, REST API and Microsoft Azure are not evidenced.",
 }
 
@@ -73,13 +75,13 @@ def test_a_run_is_recorded_with_its_model_output_and_usage(monkeypatch, agent_ca
     assert lookup == {"resume_id": 9}
     assert start == {
         "candidate_id": USER_ID, "resume_id": 9, "role_id": 4, "output_type": "smoke_test",
-        "model_id": MODEL_ID, "prompt_version": "smoke-test-v2",
+        "model_id": MODEL_ID, "prompt_version": "smoke-test-v3",
     }
     assert "status = 'done'" in finish_sql
     assert json.loads(finish["output"]) == OUTPUT
     assert finish["input_tokens"] == 1200 and finish["output_tokens"] == 80 and finish["tool_calls"] == 0
     assert agent_calls["output_model"] is smoke_test_task.OutputModel
-    assert [t.tool_name for t in agent_calls["tools"]] == ["get_assessment_ratings", "get_skill_gap"]
+    assert [t.tool_name for t in agent_calls["tools"]] == ["get_assessment_ratings", "get_skill_gap", "get_market_context"]
 
 
 def test_a_failed_run_is_recorded_and_not_raised(monkeypatch, agent_calls):
@@ -144,7 +146,7 @@ def test_the_agent_uses_the_stacks_model_through_converse():
 
     assert agent.model.config["model_id"] == MODEL_ID
     assert agent.model.config["streaming"] is False
-    assert agent.tool_names == ["get_assessment_ratings", "get_skill_gap"]
+    assert agent.tool_names == ["get_assessment_ratings", "get_skill_gap", "get_market_context"]
 
 
 def test_run_agent_returns_the_output_and_token_use():
