@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pytest
 
-from check_skill_explanations import check_role, main, write_sample
+from check_skill_explanations import check_role, export_explanations, main, write_sample
 from skill_explanation_prompt import build_prompt
 
 LINES = [(5101, "Develop REST APIs in Python with Django or FastAPI.")]
@@ -91,3 +91,25 @@ def test_main_exits_with_1_while_problems_remain(tmp_path, monkeypatch):
     monkeypatch.setattr("sys.argv", ["check", str(tmp_path), "--sample", "40"])
     main()
     assert len(pd.read_csv(tmp_path / "review-sample.csv")) == 1
+
+
+def test_export_holds_the_text_and_source_lines(tmp_path):
+    passed = [(record("Backend Developer", "Python"), reply("Backend Developer", "Python"))]
+    path = tmp_path / "skill_explanations.jsonl"
+    export_explanations(passed, path)
+    assert json.loads(path.read_text(encoding="utf-8")) == {
+        "role": "Backend Developer",
+        "skill": "Python",
+        "why_it_matters": "Backend Developer postings ask for Python to build web APIs. It often comes with Django.",
+        "how_to_show": "If you have this skill, name Python in a project line with the API you built.",
+        "sources": [{"posting_id": 5101, "line": "Develop REST APIs in Python with Django or FastAPI."}],
+    }
+
+
+def test_export_needs_every_role(tmp_path, monkeypatch):
+    write(tmp_path, "inputs", "backend-developer", [record("Backend Developer", "Python")])
+    write(tmp_path, "outputs", "backend-developer", [reply("Backend Developer", "Python")])
+    monkeypatch.setattr("sys.argv", ["check", str(tmp_path), "--role", "backend-developer",
+                                     "--export", str(tmp_path / "out.jsonl")])
+    with pytest.raises(SystemExit, match="without --role"):
+        main()

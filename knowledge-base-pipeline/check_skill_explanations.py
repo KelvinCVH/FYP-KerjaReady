@@ -7,10 +7,15 @@ anything is left to fix, so it can be rerun after each round of rewrites.
 With --sample N, once everything passes, also writes <dir>/review-sample.csv: N explanations spread across the
 roles, with their source lines and empty columns for the hand check.
 
+With --export PATH, once everything passes, also writes every explanation to one JSON Lines file with its source
+lines: the file load_knowledge_base.py loads, committed as knowledge-base-pipeline/skill_explanations.jsonl.
+
 Usage (from the repo root):
     python knowledge-base-pipeline/check_skill_explanations.py data/skill-explanations
     python knowledge-base-pipeline/check_skill_explanations.py data/skill-explanations --role backend-developer
     python knowledge-base-pipeline/check_skill_explanations.py data/skill-explanations --sample 40
+    python knowledge-base-pipeline/check_skill_explanations.py data/skill-explanations
+        --export knowledge-base-pipeline/skill_explanations.jsonl
 """
 
 import argparse
@@ -95,11 +100,26 @@ def write_sample(passed, size, path):
     pd.DataFrame(rows).to_csv(path, index=False, encoding="utf-8")
 
 
+def export_explanations(passed, path):
+    """One line per explanation, in role and input order, with the text of each source line."""
+    with Path(path).open("w", encoding="utf-8", newline="\n") as file:
+        for record, reply in passed:
+            lines = {line["posting_id"]: line["text"] for line in record["lines"]}
+            file.write(json.dumps({
+                "role": record["role"],
+                "skill": record["skill"],
+                "why_it_matters": reply["why_it_matters"],
+                "how_to_show": reply["how_to_show"],
+                "sources": [{"posting_id": i, "line": lines[i]} for i in reply["source_posting_ids"]],
+            }, ensure_ascii=False) + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Check the role skill explanations against their inputs.")
     parser.add_argument("folder")
     parser.add_argument("--role", help="check one role file only, such as backend-developer")
     parser.add_argument("--sample", type=int, help="write a hand-check sample of this many explanations")
+    parser.add_argument("--export", help="write every explanation with its source lines to this .jsonl file")
     args = parser.parse_args()
 
     folder = Path(args.folder)
@@ -124,6 +144,11 @@ def main():
     if args.sample:
         write_sample(passed, args.sample, folder / "review-sample.csv")
         print(f"Wrote {min(args.sample, len(passed))} explanations to {folder / 'review-sample.csv'}")
+    if args.export:
+        if args.role:
+            sys.exit("--export needs every role: run it without --role")
+        export_explanations(passed, args.export)
+        print(f"Exported {len(passed)} explanations to {args.export}")
 
 
 if __name__ == "__main__":
