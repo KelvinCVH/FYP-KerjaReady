@@ -3,3 +3,4 @@ constructs==10.8.1
 boto3==1.43.108
 pytest==9.1.1
 pypdf>=5.9
+strands-agents==1.66.0
