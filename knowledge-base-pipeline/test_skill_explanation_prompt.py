@@ -89,6 +89,18 @@ def test_hyphenated_words_are_not_dashes():
     assert check_explanation(reply, PROMPT, LINE_IDS) == []
 
 
+def test_hash_in_a_skill_name_is_not_markdown():
+    prompt = build_prompt("Backend Developer", "C#", 20, 84, [(6001, "Build web APIs in C# with ASP.NET Core.")], [])
+    reply = {
+        "why_it_matters": "Backend Developer postings ask for C# to build web APIs. It usually comes with ASP.NET Core.",
+        "how_to_show": "If you have this skill, name C# in a project line with the API you built.",
+        "source_posting_ids": [6001],
+    }
+    assert check_explanation(reply, prompt, [6001]) == []
+    heading = {**reply, "why_it_matters": "# Why it matters. Postings ask for C# to build web APIs."}
+    assert "why_it_matters contains markdown or a line break" in check_explanation(heading, prompt, [6001])
+
+
 def test_numbers_must_come_from_the_message():
     invented = with_changes(why_it_matters="Postings ask for Python. Most employers, around 70%, want it.")
     assert "why_it_matters uses numbers not in the message: 70" in check_explanation(invented, PROMPT, LINE_IDS)

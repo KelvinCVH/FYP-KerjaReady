@@ -71,7 +71,8 @@ NEGATIVE = re.compile(
 )
 DASH = re.compile(r"[–—]|\s-\s")
 LINK = re.compile(r"https?://|www\.|\.com\b", re.IGNORECASE)
-MARKDOWN = re.compile(r"[*#`\n]")
+# Bold, italics, code or a heading; a "#" inside a name such as C# or F# is fine
+MARKDOWN = re.compile(r"\*|`|\n|^\s*#")
 NUMBER = re.compile(r"\d+(?:\.\d+)?")
 LINE_ID = re.compile(r"^\[\d+\] ", re.MULTILINE)
 
