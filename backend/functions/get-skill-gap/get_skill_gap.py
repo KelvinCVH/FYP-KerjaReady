@@ -14,6 +14,10 @@ target_role also says where those numbers come from: posting_count entry-level J
 from first_posted to last_posted (the earliest and latest posted_date, as "YYYY-MM-DD"). Both dates are null when
 the role has no postings.
 
+Each skill not evidenced also carries its explanation (KR-100), written once for the role from its job postings:
+why_it_matters, how_to_show and sources, the posting lines it is based on, newest first. why_it_matters and
+how_to_show are null, and sources empty, until the knowledge base load adds the explanations.
+
 - 404 when the resume is missing, still uploading or another candidate's
 - 409 when its assessment has not finished, because skills are found during the assessment
 - target_role null and two empty groups when the candidate has not chosen a target role
@@ -47,12 +51,21 @@ WHERE r.resume_id = :resume_id AND r.candidate_id = CAST(:user_id AS uuid)
 # Every skill in the role profile once; the LEFT JOIN brings the resume's evidence where there is some
 ROLE_SKILLS = """
 SELECT s.skill_id, s.name, CAST(rq.demand_share AS double precision) AS demand_share,
-       rk.evidence_excerpt AS evidence, rk.match_method
+       rk.evidence_excerpt AS evidence, rk.match_method, rq.why_it_matters, rq.how_to_show
 FROM role_skills rq
 JOIN skills s ON s.skill_id = rq.skill_id
 LEFT JOIN resume_skills rk ON rk.skill_id = rq.skill_id AND rk.resume_id = :resume_id
 WHERE rq.role_id = :role_id
 ORDER BY rq.demand_share DESC, s.name
+"""
+
+# The posting lines behind the role's skill explanations, newest posting first
+EXPLANATION_SOURCES = """
+SELECT src.skill_id, src.posting_id, src.line, jp.job_title, to_char(jp.posted_date, 'YYYY-MM-DD') AS posted_date
+FROM role_skill_sources src
+JOIN job_postings jp ON jp.posting_id = src.posting_id
+WHERE src.role_id = :role_id
+ORDER BY src.skill_id, jp.posted_date DESC, src.posting_id
 """
 
 
@@ -87,7 +100,18 @@ def handler(event, user):
         "first_posted": row.get("first_posted"),
         "last_posted": row.get("last_posted"),
     }
-    for skill in run_query(ROLE_SKILLS, [_long("resume_id", resume_id), _long("role_id", row["role_id"])]):
+    skills = run_query(ROLE_SKILLS, [_long("resume_id", resume_id), _long("role_id", row["role_id"])])
+    sources = {}
+    if any(skill.get("evidence") is None for skill in skills):
+        for source in run_query(EXPLANATION_SOURCES, [_long("role_id", row["role_id"])]):
+            sources.setdefault(source["skill_id"], []).append({
+                "posting_id": source["posting_id"],
+                "line": source["line"],
+                "job_title": source["job_title"],
+                "posted_date": source["posted_date"],
+            })
+
+    for skill in skills:
         entry = {
             "skill_id": skill["skill_id"],
             "name": skill["name"],
@@ -95,7 +119,12 @@ def handler(event, user):
             "postings": round(skill["demand_share"] * posting_count),
         }
         if skill.get("evidence") is None:
-            result["not_evidenced"].append(entry)
+            result["not_evidenced"].append({
+                **entry,
+                "why_it_matters": skill.get("why_it_matters"),
+                "how_to_show": skill.get("how_to_show"),
+                "sources": sources.get(skill["skill_id"], []),
+            })
         else:
             result["evidenced"].append({**entry, "evidence": skill["evidence"], "match_method": skill["match_method"]})
     return 200, result
