@@ -3,6 +3,7 @@ from pathlib import Path
 from aws_cdk import (
     Stack,
     Duration,
+    BundlingOptions,
     CfnOutput,
     SecretValue,
     Annotations,
@@ -546,6 +547,61 @@ class KerjaReadyStack(Stack):
                 "RetryResumeAssessmentIntegration", retry_resume_assessment_function
             ),
         )
+
+        # Guidance agent (KR-97): Strands on Claude Haiku 5.5 through Bedrock global cross-Region inference.
+        # Runs in the background; its tools send the model no resume text or personal details.
+        # Its Python packages are installed into their own layer when the stack is synthesised (needs Docker).
+        guidance_agent_layer = _lambda.LayerVersion(
+            self,
+            "GuidanceAgentLayer",
+            layer_version_name="kerjaready-guidance-agent",
+            code=_lambda.Code.from_asset(
+                str(LAYERS_DIR / "guidance-agent"),
+                bundling=BundlingOptions(
+                    image=_lambda.Runtime.PYTHON_3_12.bundling_image,
+                    platform="linux/amd64",
+                    command=["bash", "-c", "pip install --no-cache-dir -r requirements.txt -t /asset-output/python"],
+                ),
+            ),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_12],
+            description="Strands Agents SDK for the guidance agent",
+        )
+        run_guidance_agent_function = self._create_python_function(
+            "RunGuidanceAgentFunction",
+            "run-guidance-agent",
+            timeout=Duration.minutes(5),
+            memory_size=1024,
+            environment=data_api_environment,
+            layers=[shared_layer, guidance_agent_layer],
+        )
+        # Never replay a run: each one costs model tokens
+        run_guidance_agent_function.configure_async_invoke(retry_attempts=0)
+        self.cluster.grant_data_api_access(run_guidance_agent_function)
+        # Global cross-Region inference needs three grants: the inference profile here, the model here, and the
+        # model in whichever Region Bedrock routes to ("unspecified"), each only through this profile
+        guidance_model = "anthropic.claude-haiku-5-5"
+        guidance_profile = f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/global.{guidance_model}"
+        run_guidance_agent_function.add_to_role_policy(iam.PolicyStatement(
+            actions=["bedrock:InvokeModel"],
+            resources=[guidance_profile],
+            conditions={"StringEquals": {"aws:RequestedRegion": self.region}},
+        ))
+        run_guidance_agent_function.add_to_role_policy(iam.PolicyStatement(
+            actions=["bedrock:InvokeModel"],
+            resources=[f"arn:aws:bedrock:{self.region}::foundation-model/{guidance_model}"],
+            conditions={"StringEquals": {
+                "aws:RequestedRegion": self.region,
+                "bedrock:InferenceProfileArn": guidance_profile,
+            }},
+        ))
+        run_guidance_agent_function.add_to_role_policy(iam.PolicyStatement(
+            actions=["bedrock:InvokeModel"],
+            resources=[f"arn:aws:bedrock:::foundation-model/{guidance_model}"],
+            conditions={"StringEquals": {
+                "aws:RequestedRegion": "unspecified",
+                "bedrock:InferenceProfileArn": guidance_profile,
+            }},
+        ))
 
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
