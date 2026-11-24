@@ -78,7 +78,7 @@ export default function SkillGapContextCard({
           <p className="text-sm text-muted-foreground">Target role</p>
           <p className="text-lg font-semibold break-words">{targetRole.title}</p>
           <p className="text-sm text-muted-foreground">
-            <span className="tabular-nums">{postings}</span> entry-level JobStreet{" "}
+            <span className="tabular-nums">{postings}</span> entry-level job{" "}
             {postings === 1 ? "posting" : "postings"} in Malaysia
           </p>
           <p className="text-sm text-muted-foreground">
