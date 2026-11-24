@@ -1,52 +1,41 @@
-"""A small end-to-end check of the guidance agent (KR-143): one tool, one structured output.
+"""An end-to-end check of the guidance agent on real data (KR-143, KR-144): its tools and structured output.
 
-It proves that the model, its permissions, the tool loop, the tool call limit and structured output all work
-before the real tools and the roadmap prompt exist. It uses only knowledge base data, never resume text or
-personal details.
+The agent must choose which tools to call to answer, then return one structured result. It proves the model,
+its permissions, the tools, the tool call limit and structured output all work before the roadmap prompt exists.
 
 Each task module gives: PROMPT_VERSION, SYSTEM_PROMPT, OutputModel, make_tools(resume_id, role_id) and
 build_prompt(). The tools are bound to the run's resume and role, so the model can never ask about another
 candidate's data.
 """
 
-from kerjaready_shared.data_api import run_query
+import guidance_tools
 from pydantic import BaseModel, Field
-from strands import tool
 
-PROMPT_VERSION = "smoke-test-v1"
+PROMPT_VERSION = "smoke-test-v2"
 SYSTEM_PROMPT = (
-    "You check that a career guidance service is working. Use the tool to look up the facts you need. "
-    "Report only what the tool returns."
+    "You check that a career guidance service is working. Use the tools to look up the facts you need, and "
+    "report only what they return. A skill that is not evidenced is one the resume does not show, not one the "
+    "candidate lacks."
 )
-
-ROLE_PROFILE_SIZE = """
-SELECT ro.title, count(rq.skill_id) AS skills
-FROM roles ro
-LEFT JOIN role_skills rq ON rq.role_id = ro.role_id
-WHERE ro.role_id = :role_id
-GROUP BY ro.title
-"""
 
 
 class OutputModel(BaseModel):
     """The smoke test's result."""
 
-    role_title: str = Field(description="The target role title the tool returned")
-    skill_count: int = Field(description="How many skills the tool says the role profile lists")
-    summary: str = Field(description="One short sentence that states both facts")
+    role_title: str = Field(description="The candidate's target role")
+    lowest_criterion: str = Field(description="The name of the lowest-rated assessment criterion")
+    top_skills_not_evidenced: list[str] = Field(
+        max_length=3, description="The three skills not evidenced in the resume that most postings ask for"
+    )
+    summary: str = Field(description="One short sentence that states these facts")
 
 
 def make_tools(resume_id, role_id):
-    @tool
-    def get_target_role_profile() -> str:
-        """Look up the candidate's target role: its title and how many skills its profile lists."""
-        rows = run_query(ROLE_PROFILE_SIZE, [{"name": "role_id", "value": {"longValue": role_id}}])
-        if not rows:
-            return "The target role was not found."
-        return f"{rows[0]['title']}: {rows[0]['skills']} skills in its profile"
-
-    return [get_target_role_profile]
+    return guidance_tools.make_tools(resume_id, role_id)
 
 
 def build_prompt():
-    return "Look up the target role, then report its title and how many skills its profile lists."
+    return (
+        "Find the candidate's target role, their lowest-rated assessment criterion and the three skills not "
+        "evidenced in their resume that most postings ask for."
+    )

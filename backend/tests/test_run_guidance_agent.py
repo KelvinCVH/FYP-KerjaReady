@@ -20,7 +20,12 @@ MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 def guidance_model(monkeypatch):
     """The stack sets the model; the tests set the one it uses today."""
     monkeypatch.setenv("GUIDANCE_MODEL_ID", MODEL_ID)
-OUTPUT = {"role_title": "AI/ML Engineer", "skill_count": 32, "summary": "AI/ML Engineer lists 32 skills."}
+OUTPUT = {
+    "role_title": "AI/ML Engineer",
+    "lowest_criterion": "Outcome",
+    "top_skills_not_evidenced": ["TensorFlow", "REST API", "Microsoft Azure"],
+    "summary": "AI/ML Engineer; Outcome is lowest; TensorFlow, REST API and Microsoft Azure are not evidenced.",
+}
 
 
 def database_with(resume_row=ASSESSED):
@@ -68,13 +73,13 @@ def test_a_run_is_recorded_with_its_model_output_and_usage(monkeypatch, agent_ca
     assert lookup == {"resume_id": 9}
     assert start == {
         "candidate_id": USER_ID, "resume_id": 9, "role_id": 4, "output_type": "smoke_test",
-        "model_id": MODEL_ID, "prompt_version": "smoke-test-v1",
+        "model_id": MODEL_ID, "prompt_version": "smoke-test-v2",
     }
     assert "status = 'done'" in finish_sql
     assert json.loads(finish["output"]) == OUTPUT
     assert finish["input_tokens"] == 1200 and finish["output_tokens"] == 80 and finish["tool_calls"] == 0
     assert agent_calls["output_model"] is smoke_test_task.OutputModel
-    assert [t.tool_name for t in agent_calls["tools"]] == ["get_target_role_profile"]
+    assert [t.tool_name for t in agent_calls["tools"]] == ["get_assessment_ratings", "get_skill_gap"]
 
 
 def test_a_failed_run_is_recorded_and_not_raised(monkeypatch, agent_calls):
@@ -114,7 +119,7 @@ def tool_call(name):
 
 def test_tool_calls_after_the_limit_are_cancelled():
     limit = guidance_agent.ToolCallLimit(output_tool="OutputModel", max_calls=2)
-    events = [tool_call("get_target_role_profile") for _ in range(3)]
+    events = [tool_call("get_skill_gap") for _ in range(3)]
     for event in events:
         limit.count(event)
     assert [e.cancel_tool for e in events[:2]] == [False, False]
@@ -126,7 +131,7 @@ def test_tool_calls_after_the_limit_are_cancelled():
 
 def test_the_structured_output_call_is_never_counted_or_cancelled():
     limit = guidance_agent.ToolCallLimit(output_tool="OutputModel", max_calls=1)
-    limit.count(tool_call("get_target_role_profile"))
+    limit.count(tool_call("get_skill_gap"))
     output = tool_call("OutputModel")
     limit.count(output)
     assert output.cancel_tool is False
@@ -139,7 +144,7 @@ def test_the_agent_uses_the_stacks_model_through_converse():
 
     assert agent.model.config["model_id"] == MODEL_ID
     assert agent.model.config["streaming"] is False
-    assert agent.tool_names == ["get_target_role_profile"]
+    assert agent.tool_names == ["get_assessment_ratings", "get_skill_gap"]
 
 
 def test_run_agent_returns_the_output_and_token_use():
@@ -155,12 +160,3 @@ def test_run_agent_returns_the_output_and_token_use():
     empty = SimpleNamespace(structured_output=None, metrics=result.metrics)
     with pytest.raises(ValueError, match="no structured output"):
         guidance_agent.run_agent(lambda prompt, **kwargs: empty, "Prompt.", smoke_test_task.OutputModel)
-
-
-def test_the_smoke_test_tool_reads_only_the_runs_role(monkeypatch):
-    database = FakeDatabase(lambda sql, params: [{"title": "AI/ML Engineer", "skills": 32}])
-    monkeypatch.setattr(smoke_test_task, "run_query", database)
-    (get_profile,) = smoke_test_task.make_tools(9, 4)
-
-    assert get_profile() == "AI/ML Engineer: 32 skills in its profile"
-    assert database.queries[0][1] == {"role_id": 4}
