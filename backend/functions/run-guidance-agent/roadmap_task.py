@@ -18,7 +18,7 @@ from typing import Optional
 import guidance_tools
 from pydantic import BaseModel, Field
 
-PROMPT_VERSION = "roadmap-v2"
+PROMPT_VERSION = "roadmap-v3"
 MILESTONES = 6
 MAX_RESUME_STEPS = 2
 
@@ -36,21 +36,29 @@ next_level is null. For each, explain in two or three sentences how to reach the
 the target role, building on the criterion's next_level wording. Give an example resume line with [placeholders] \
 the candidate fills in. In linked_skills, name the milestone skills whose practice projects can supply that evidence.
 
-Skill milestones: one for each chosen skill, in get_skill_gap's order. Never reorder them. For each milestone:
-- learning_order: when this skill builds on another chosen skill, say so, such as "Learn this after PyTorch, because \
-the Hugging Face models you will fine-tune run on PyTorch." Otherwise null.
-- prerequisites: the knowledge to have before starting, in plain words, or null if none beyond the basics.
+Skill milestones: exactly one for each chosen skill, in get_skill_gap's order. Never reorder them, and never \
+leave one out, even when a skill seems less related to the role: the candidate decides what to learn. For each \
+milestone:
+- learning_order: when this skill builds directly on one other chosen skill, name that skill and say why, such as \
+"Learn this after PyTorch, because the Hugging Face models you will fine-tune run on PyTorch." Otherwise null.
+- prerequisites: knowledge from outside this roadmap to have before starting, in plain words, or null if none \
+beyond the basics. Do not mention other milestones here: that belongs in learning_order.
 - objectives: three things the candidate will be able to do.
 - key_topics: four to six topics. Name each in plain words, and add at most one well-known module or class name in \
-brackets when it is the standard way to do that topic, such as "Building models from layers (torch.nn)". Never \
-put names from two frameworks in one topic, and never write method calls or code.
+brackets when it is the standard way to do that topic, such as "Building models from layers (torch.nn)". \
+Brackets hold one name only: never a list such as (pandas, NumPy) or alternatives such as (torch.nn or tf.keras). \
+Never write method calls or code.
 - practice_project: a project a student can finish alongside their studies, with a Malaysian setting where it \
 fits naturally. Choose a problem a real user or business could have, not a standard tutorial exercise such as \
-recognising handwritten digits. The title and description must describe the same project. Its deliverable is \
-something they can link from their resume, such as a code repository, live demo or portfolio page.
-- ready_when: two or three checks of understanding or ability, never the name of a function.
-- resume_line: a resume line pattern that starts with a past-tense verb and has [placeholders], including one \
-for a measured result, such as [accuracy] or [time saved].
+recognising handwritten digits. Use data the candidate can get freely and legally, such as a public dataset or \
+data they collect themselves. Never use personal data about real people, data that needs an organisation's \
+permission, or data scraped from websites. The title and description must describe the same project. Its \
+deliverable is something they can link from their resume, such as a code repository, live demo or portfolio page.
+- ready_when: two or three checks of understanding or ability, never the name of a function or a fixed score \
+such as an accuracy percentage.
+- resume_line: a resume line pattern that starts with a past-tense verb and has [placeholders], including exactly \
+one for a measured result, such as [accuracy] or [time saved]. Do not add placeholders for numbers of users, \
+request volumes or business impact, because a practice project may have none.
 - search_terms: one or two short phrases for finding tutorials and courses. Each must contain the skill name as \
 get_skill_gap writes it.
 - source_posting_ids: the posting_id values of the posting lines you used.
