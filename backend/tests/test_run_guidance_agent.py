@@ -113,7 +113,7 @@ def test_a_roadmap_run_uses_the_roadmap_prompt_and_schema(monkeypatch, agent_cal
     call(monkeypatch, database, {"resume_id": 9, "output_type": "roadmap"})
 
     _, start = database.queries[1]
-    assert start["output_type"] == "roadmap" and start["prompt_version"] == "roadmap-v1"
+    assert start["output_type"] == "roadmap" and start["prompt_version"] == "roadmap-v2"
     assert agent_calls["system_prompt"] == roadmap_task.SYSTEM_PROMPT
     assert agent_calls["output_model"] is roadmap_task.OutputModel
 
