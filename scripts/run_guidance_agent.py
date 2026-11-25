@@ -1,11 +1,11 @@
 """Start one guidance agent run and wait for its result (KR-97).
 
 The run is recorded in agent_runs like any other. The resume must be assessed (status done) and its owner must
-have a target role. Use it to check the agent after a deploy: until KR-147, the only output type is smoke_test.
+have a target role. Use it to check the agent after a deploy (smoke_test) or to see a roadmap's output (roadmap).
 
 Usage (from the repo root):
     python scripts/run_guidance_agent.py <resume_id>
-    python scripts/run_guidance_agent.py <resume_id> --output-type smoke_test
+    python scripts/run_guidance_agent.py <resume_id> --output-type roadmap
 """
 
 import argparse
@@ -23,7 +23,7 @@ LAMBDA_CONFIG = Config(read_timeout=310, retries={"total_max_attempts": 1})
 def main():
     parser = argparse.ArgumentParser(description="Run the guidance agent for one assessed resume.")
     parser.add_argument("resume_id", type=int)
-    parser.add_argument("--output-type", default="smoke_test")
+    parser.add_argument("--output-type", default="smoke_test", choices=["smoke_test", "roadmap"])
     parser.add_argument("--profile", default="kerjaready")
     args = parser.parse_args()
 

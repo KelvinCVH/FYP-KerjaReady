@@ -1,6 +1,6 @@
 """Run the guidance agent for one assessed resume and the candidate's target role, in the background (KR-97).
 
-Event: {"resume_id": <id>, "output_type": "smoke_test"}. Each run gets a row in agent_runs with its model,
+Event: {"resume_id": <id>, "output_type": "roadmap" or "smoke_test"}. Each run gets a row in agent_runs with its model,
 prompt version, tool calls and token use, then its output or why it failed. Errors are recorded and never
 re-raised, so the async invoke never retries a run. The logs hold ids and counts only, never resume text or
 model output.
@@ -10,10 +10,11 @@ import json
 import time
 
 import guidance_agent
+import roadmap_task
 import smoke_test_task
 from kerjaready_shared.data_api import run_query
 
-TASKS = {"smoke_test": smoke_test_task}
+TASKS = {"roadmap": roadmap_task, "smoke_test": smoke_test_task}
 
 RESUME_AND_ROLE = """
 SELECT r.candidate_id, u.target_role_id AS role_id, r.status

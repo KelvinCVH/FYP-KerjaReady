@@ -22,7 +22,7 @@ EXPLANATION_ROWS = [
      "why_it_matters": "Postings ask for TensorFlow to train models.", "how_to_show": "If you have this skill, name it."},
     {"skill_id": 2, "name": "C#", "demand_share": 0.1346, "why_it_matters": None, "how_to_show": None},
 ] + [{"skill_id": 10 + i, "name": f"Skill {i}", "demand_share": 0.1, "why_it_matters": "Why.", "how_to_show": "How."}
-     for i in range(6)]
+     for i in range(7)]
 SOURCE_ROWS = [
     {"skill_id": 1, "posting_id": 901, "line": "Train models with TensorFlow.", "job_title": "AI Engineer",
      "posted_month": "2026-03"},
@@ -69,6 +69,16 @@ def test_ratings_use_criterion_names_and_level_labels(tools):
     ]
     assert all(c["out_of"] == 3 for c in criteria)
     assert fake.queries[0][1] == {"resume_id": 9}
+
+
+def test_ratings_give_the_rubrics_next_level_wording(tools):
+    _, get_ratings, _, _ = tools
+    next_level = {c["name"]: c["next_level"] for c in json.loads(get_ratings())["criteria"]}
+
+    assert next_level["Work Evidence"].startswith("A link to the work itself")
+    assert next_level["Outcome"].startswith("A concrete result in more than half")
+    assert next_level["Skill in Use"] is None
+    assert next_level["Language Quality"] is None
 
 
 def test_skill_gap_gives_names_match_types_and_posting_counts(tools):
@@ -126,12 +136,12 @@ def test_market_context_gives_explanations_and_posting_lines_for_the_roles_skill
     assert all(params == {"role_id": 4} for _, params in fake.queries)
 
 
-def test_market_context_looks_up_at_most_five_skills(tools):
+def test_market_context_looks_up_at_most_six_skills(tools):
     _, _, _, get_context = tools
-    context = json.loads(get_context([f"Skill {i}" for i in range(6)]))
+    context = json.loads(get_context([f"Skill {i}" for i in range(7)]))
 
-    assert [s["skill"] for s in context["skills"]] == [f"Skill {i}" for i in range(5)]
-    assert context["note"] == "Only the first 5 skills were looked up; ask again for the rest."
+    assert [s["skill"] for s in context["skills"]] == [f"Skill {i}" for i in range(6)]
+    assert context["note"] == "Only the first 6 skills were looked up; ask again for the rest."
 
 
 def test_no_tool_reads_resume_text_links_or_personal_details():

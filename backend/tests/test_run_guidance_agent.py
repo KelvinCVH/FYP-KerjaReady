@@ -9,6 +9,7 @@ from conftest import FUNCTIONS_DIR, USER_ID, FakeDatabase
 # The function is several modules: put its folder on the path, as Lambda does
 sys.path.insert(0, str(FUNCTIONS_DIR / "run-guidance-agent"))
 import guidance_agent  # noqa: E402
+import roadmap_task  # noqa: E402
 import run_guidance_agent  # noqa: E402
 import smoke_test_task  # noqa: E402
 
@@ -105,6 +106,16 @@ def test_no_run_starts_without_an_assessed_resume_and_a_target_role(monkeypatch,
     assert call(monkeypatch, database) == {"error": message}
     assert len(database.queries) == 1
     assert "prompt" not in agent_calls
+
+
+def test_a_roadmap_run_uses_the_roadmap_prompt_and_schema(monkeypatch, agent_calls):
+    database = database_with()
+    call(monkeypatch, database, {"resume_id": 9, "output_type": "roadmap"})
+
+    _, start = database.queries[1]
+    assert start["output_type"] == "roadmap" and start["prompt_version"] == "roadmap-v1"
+    assert agent_calls["system_prompt"] == roadmap_task.SYSTEM_PROMPT
+    assert agent_calls["output_model"] is roadmap_task.OutputModel
 
 
 def test_an_unknown_output_type_is_refused(monkeypatch, agent_calls):
