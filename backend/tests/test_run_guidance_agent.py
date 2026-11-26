@@ -220,3 +220,46 @@ def test_run_agent_fails_with_the_last_rejection_once_corrections_run_out():
     stopped = SimpleNamespace(structured_output=None, metrics=None, stop_reason="limit_structured_output_attempts")
     with pytest.raises(ValueError, match="failed its checks 3 times. Fix: brackets."):
         guidance_agent.run_agent(lambda prompt, **kwargs: stopped, "Prompt.", smoke_test_task.OutputModel, limit)
+
+def claimable(rows=({"resume_id": 9, "role_id": 4},)):
+    """A database where POST /candidate/roadmap has created run 55 and it is waiting for its agent."""
+    def answer(sql, params):
+        if sql.strip().startswith("UPDATE agent_runs SET model_id"):
+            return list(rows)
+        return []
+    return FakeDatabase(answer)
+
+
+def test_a_run_created_by_the_api_is_claimed_not_created(monkeypatch, agent_calls):
+    roadmap = roadmap_task.output_model_for(["TensorFlow"])
+    monkeypatch.setattr(roadmap_task, "prepare", lambda resume_id, role_id: guidance_agent.TaskRun(
+        f"Roadmap for resume {resume_id} and role {role_id}.", roadmap, finish=lambda output: output))
+    database = claimable()
+    result = call(monkeypatch, database, {"run_id": 55, "output_type": "roadmap"})
+
+    assert result["run_id"] == 55 and result["status"] == "done"
+    (claim_sql, claim), (finish_sql, finish) = database.queries
+    assert claim == {"run_id": 55, "output_type": "roadmap", "model_id": MODEL_ID, "prompt_version": "roadmap-v5"}
+    assert "status = 'running' AND model_id IS NULL" in claim_sql
+    assert agent_calls["prompt"] == "Roadmap for resume 9 and role 4."
+    assert "status = 'done'" in finish_sql and finish["run_id"] == 55
+    assert not any(sql.strip().startswith("INSERT") for sql, _ in database.queries)
+
+
+def test_a_run_that_is_not_waiting_is_never_started_twice(monkeypatch, agent_calls):
+    database = claimable(rows=())
+    result = call(monkeypatch, database, {"run_id": 55, "output_type": "roadmap"})
+
+    assert result == {"error": "No run waiting to start with this id"}
+    assert len(database.queries) == 1 and "prompt" not in agent_calls
+
+
+def test_a_script_run_is_refused_while_the_same_run_is_running(monkeypatch, agent_calls):
+    def answer(sql, params):
+        return [ASSESSED] if "FROM resumes r" in sql else []
+    database = FakeDatabase(answer)
+    result = call(monkeypatch, database, {"resume_id": 9, "output_type": "roadmap"})
+
+    assert result == {"error": "A run of this kind is already running for this resume and role"}
+    assert "ON CONFLICT DO NOTHING" in database.queries[1][0]
+    assert "prompt" not in agent_calls

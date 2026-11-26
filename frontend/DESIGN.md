@@ -67,7 +67,7 @@ Every status shows a text label and an icon. Colour is never the only signal.
 
 ### 5.3 Rules
 
-- Emerald is the only accent colour. Do not introduce another hue for decoration.
+- Emerald is the only accent colour. Do not introduce another hue for decoration. Exception: skill logos keep their own colours (Section 10).
 - Red is reserved for destructive actions and system or form errors. Never use red for scores, assessment results, skill gaps or rejection.
 - No gradient text, no glows, no purple or blue accents.
 - Text contrast is at least 4.5:1 (3:1 for text 24px and above, or 18.66px bold and above).
@@ -158,6 +158,7 @@ Base: shadcn/ui components in `src/components/ui/` (Nova preset, Radix). Add new
 - `lucide-react` only. Stroke width 2. Size 16px inline, 20px in buttons and navigation.
 - Icon-only buttons need `aria-label`. Decorative icons get `aria-hidden="true"`.
 - Never hand-draw SVG icons.
+- Exception, skill logos: a skill with an official logo shows it, in its own colours, in a 44px white tile beside the skill name (`SkillTile`). The logos are SVG files in `public/skill-logos/`, mapped in `src/lib/skillLogos.ts`, with sources and licences in `public/skill-logos/SOURCES.md`. They are decorative, because the name is always shown. Skills without a readable official logo show their letters on an emerald-50 tile.
 
 ## 11. Landing Page Rules (Taste Skill)
 
