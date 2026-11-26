@@ -81,6 +81,18 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+
+  /* An indeterminate progress bar: a third-width segment sliding across its track (transform only).
+     Use it with motion-safe:, so the bar stays still under reduced motion. */
+  --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
+  @keyframes indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
 }
 
 @layer base {

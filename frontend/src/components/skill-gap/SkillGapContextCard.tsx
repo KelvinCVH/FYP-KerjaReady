@@ -1,6 +1,6 @@
 import { useId } from "react";
-import { Link } from "react-router";
 import { Target } from "lucide-react";
+import ChangeOnProfileLink from "@/components/profile/ChangeOnProfileLink";
 import { profileCard, sectionIconTile } from "@/components/profile/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMonth } from "@/lib/formatDate";
@@ -83,13 +83,7 @@ export default function SkillGapContextCard({
           </p>
           <p className="text-sm text-muted-foreground">
             <PostedRange first={targetRole.first_posted} last={targetRole.last_posted} />
-            {/* The ::before box makes the touch target 44px tall without changing the line */}
-            <Link
-              to="/candidate/profile"
-              className="relative rounded-md font-medium text-primary underline-offset-4 outline-none before:absolute before:-inset-x-1 before:-inset-y-3.5 before:content-[''] hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-            >
-              Change on Profile
-            </Link>
+            <ChangeOnProfileLink />
           </p>
         </div>
       </div>
