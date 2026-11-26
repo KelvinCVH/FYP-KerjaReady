@@ -1,7 +1,7 @@
 """Run the guidance agent for one assessed resume and the candidate's target role, in the background (KR-97).
 
 Event: {"resume_id": <id>, "output_type": "roadmap" or "smoke_test"}. Each run gets a row in agent_runs with its model,
-prompt version, tool calls and token use, then its output or why it failed. Errors are recorded and never
+prompt version, tool calls, corrections and token use, then its output or why it failed. Errors are recorded and never
 re-raised, so the async invoke never retries a run. The logs hold ids and counts only, never resume text or
 model output.
 """
@@ -29,13 +29,13 @@ RETURNING run_id
 """
 FINISH_RUN = """
 UPDATE agent_runs
-SET status = 'done', output = CAST(:output AS jsonb), tool_calls = :tool_calls,
+SET status = 'done', output = CAST(:output AS jsonb), tool_calls = :tool_calls, corrections = :corrections,
     input_tokens = :input_tokens, output_tokens = :output_tokens, finished_at = now()
 WHERE run_id = :run_id
 """
 FAIL_RUN = """
 UPDATE agent_runs
-SET status = 'failed', error = :error, tool_calls = :tool_calls, finished_at = now()
+SET status = 'failed', error = :error, tool_calls = :tool_calls, corrections = :corrections, finished_at = now()
 WHERE run_id = :run_id
 """
 MAX_ERROR_CHARS = 300
@@ -76,22 +76,27 @@ def handler(event, context):
         prompt_version=task.PROMPT_VERSION,
     ))[0]["run_id"]
 
-    limit = guidance_agent.ToolCallLimit(output_tool=task.OutputModel.__name__)
+    limit = None
     started = time.monotonic()
     try:
+        run = task.prepare(resume_id, role_id)
+        limit = guidance_agent.ToolCallLimit(output_tool=run.output_model.__name__)
         agent = guidance_agent.build_agent(task.SYSTEM_PROMPT, task.make_tools(resume_id, role_id), limit)
-        output, input_tokens, output_tokens = guidance_agent.run_agent(agent, task.build_prompt(), task.OutputModel)
+        output, input_tokens, output_tokens = guidance_agent.run_agent(agent, run.prompt, run.output_model, limit)
+        output = run.finish(output)
     except Exception as error:
         message = f"{type(error).__name__}: {error}"[:MAX_ERROR_CHARS]
-        run_query(FAIL_RUN, _parameters(run_id=run_id, error=message, tool_calls=limit.calls))
+        tool_calls, corrections = (limit.calls, limit.corrections) if limit else (0, 0)
+        run_query(FAIL_RUN, _parameters(run_id=run_id, error=message, tool_calls=tool_calls, corrections=corrections))
         print(json.dumps({"run_id": run_id, "status": "failed", "error_type": type(error).__name__,
-                          "tool_calls": limit.calls}))
+                          "tool_calls": tool_calls, "corrections": corrections}))
         return {"run_id": run_id, "status": "failed", "error": message}
 
     run_query(FINISH_RUN, _parameters(
         run_id=run_id,
         output=json.dumps(output),
         tool_calls=limit.calls,
+        corrections=limit.corrections,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     ))
@@ -100,6 +105,7 @@ def handler(event, context):
         "status": "done",
         "output_type": output_type,
         "tool_calls": limit.calls,
+        "corrections": limit.corrections,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "seconds": round(time.monotonic() - started, 1),

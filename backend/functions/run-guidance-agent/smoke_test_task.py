@@ -3,11 +3,12 @@
 The agent must choose which tools to call to answer, then return one structured result. It proves the model,
 its permissions, the tools, the tool call limit and structured output all work before the roadmap prompt exists.
 
-Each task module gives: PROMPT_VERSION, SYSTEM_PROMPT, OutputModel, make_tools(resume_id, role_id) and
-build_prompt(). The tools are bound to the run's resume and role, so the model can never ask about another
-candidate's data.
+Each task module gives: PROMPT_VERSION, SYSTEM_PROMPT, make_tools(resume_id, role_id) and
+prepare(resume_id, role_id), which returns the run's prompt and output model as a TaskRun. The tools are bound to
+the run's resume and role, so the model can never ask about another candidate's data.
 """
 
+import guidance_agent
 import guidance_tools
 from pydantic import BaseModel, Field
 
@@ -16,6 +17,11 @@ SYSTEM_PROMPT = (
     "You check that a career guidance service is working. Use the tools to look up the facts you need, and "
     "report only what they return. A skill that is not evidenced is one the resume does not show, not one the "
     "candidate lacks."
+)
+PROMPT = (
+    "Find the candidate's target role, their lowest-rated assessment criterion and the three skills not "
+    "evidenced in their resume that most postings ask for. Then say why the role asks for the first of "
+    "those skills, citing the posting lines you used."
 )
 
 
@@ -36,9 +42,5 @@ def make_tools(resume_id, role_id):
     return guidance_tools.make_tools(resume_id, role_id)
 
 
-def build_prompt():
-    return (
-        "Find the candidate's target role, their lowest-rated assessment criterion and the three skills not "
-        "evidenced in their resume that most postings ask for. Then say why the role asks for the first of "
-        "those skills, citing the posting lines you used."
-    )
+def prepare(resume_id, role_id):
+    return guidance_agent.TaskRun(PROMPT, OutputModel)
