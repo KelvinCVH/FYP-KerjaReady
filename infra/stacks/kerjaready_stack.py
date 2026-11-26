@@ -606,6 +606,45 @@ class KerjaReadyStack(Stack):
             }},
         ))
 
+        # Candidate: the learning roadmap for their latest assessed resume and target role (KR-98)
+        get_roadmap_function = self._create_python_function(
+            "GetRoadmapFunction",
+            "get-roadmap",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(get_roadmap_function)
+        self.http_api.add_routes(
+            path="/candidate/roadmap",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "GetRoadmapIntegration", get_roadmap_function
+            ),
+        )
+
+        # Candidate: start writing a roadmap. The run's row is created here, then the guidance agent runs in the
+        # background, so the page checks GET /candidate/roadmap until it finishes.
+        start_roadmap_function = self._create_python_function(
+            "StartRoadmapFunction",
+            "start-roadmap",
+            timeout=Duration.seconds(29),
+            environment={
+                **data_api_environment,
+                "GUIDANCE_FUNCTION_NAME": run_guidance_agent_function.function_name,
+            },
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(start_roadmap_function)
+        run_guidance_agent_function.grant_invoke(start_roadmap_function)
+        self.http_api.add_routes(
+            path="/candidate/roadmap",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "StartRoadmapIntegration", start_roadmap_function
+            ),
+        )
+
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",

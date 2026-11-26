@@ -1,7 +1,14 @@
 """Run the guidance agent for one assessed resume and the candidate's target role, in the background (KR-97).
 
-Event: {"resume_id": <id>, "output_type": "roadmap" or "smoke_test"}. Each run gets a row in agent_runs with its model,
-prompt version, tool calls, corrections and token use, then its output or why it failed. Errors are recorded and never
+Two kinds of event:
+- {"run_id": <id>, "output_type": "roadmap"} from POST /candidate/roadmap (KR-98), which has already created the run's
+  row for its resume and role. The agent claims the row by filling in its model and prompt version, so a run is only
+  ever started once.
+- {"resume_id": <id>, "output_type": "roadmap" or "smoke_test"} from scripts/run_guidance_agent.py, which creates the
+  row here for the candidate's current target role.
+
+Each run's row holds its model, prompt version, tool calls, corrections and token use, then its output or why it
+failed. Errors are recorded and never
 re-raised, so the async invoke never retries a run. The logs hold ids and counts only, never resume text or
 model output.
 """
@@ -22,10 +29,18 @@ FROM resumes r
 JOIN users u ON u.user_id = r.candidate_id
 WHERE r.resume_id = :resume_id
 """
+# Nothing comes back when a run of this kind is already running for the resume and role (migration 012)
 START_RUN = """
 INSERT INTO agent_runs (candidate_id, resume_id, role_id, output_type, model_id, prompt_version)
 VALUES (CAST(:candidate_id AS uuid), :resume_id, :role_id, :output_type, :model_id, :prompt_version)
+ON CONFLICT DO NOTHING
 RETURNING run_id
+"""
+# Only a row still waiting for its agent: running, with no model yet
+CLAIM_RUN = """
+UPDATE agent_runs SET model_id = :model_id, prompt_version = :prompt_version
+WHERE run_id = :run_id AND output_type = :output_type AND status = 'running' AND model_id IS NULL
+RETURNING resume_id, role_id
 """
 FINISH_RUN = """
 UPDATE agent_runs
@@ -53,28 +68,55 @@ def _parameters(**values):
     return [{"name": name, "value": value(item)} for name, item in values.items()]
 
 
-def handler(event, context):
-    resume_id = int(event["resume_id"])
-    output_type = event.get("output_type", "smoke_test")
-    task = TASKS.get(output_type)
-    if task is None:
-        return {"error": f"Unknown output type: {output_type}"}
+def claim_run(run_id, output_type, task):
+    """(run_id, resume_id, role_id) for a run POST created, or an error when it isn't waiting to start."""
+    rows = run_query(CLAIM_RUN, _parameters(
+        run_id=run_id,
+        output_type=output_type,
+        model_id=guidance_agent.model_id(),
+        prompt_version=task.PROMPT_VERSION,
+    ))
+    if not rows:
+        return {"error": "No run waiting to start with this id"}
+    return run_id, rows[0]["resume_id"], rows[0]["role_id"]
 
+
+def start_run(resume_id, output_type, task):
+    """(run_id, resume_id, role_id) for a new run on the candidate's current target role, or an error."""
     rows = run_query(RESUME_AND_ROLE, _parameters(resume_id=resume_id))
     if not rows or rows[0]["status"] != "done":
         return {"error": "No assessed resume with this id"}
     if rows[0]["role_id"] is None:
         return {"error": "The candidate has no target role"}
-    candidate_id, role_id = rows[0]["candidate_id"], rows[0]["role_id"]
+    role_id = rows[0]["role_id"]
 
-    run_id = run_query(START_RUN, _parameters(
-        candidate_id=candidate_id,
+    created = run_query(START_RUN, _parameters(
+        candidate_id=rows[0]["candidate_id"],
         resume_id=resume_id,
         role_id=role_id,
         output_type=output_type,
         model_id=guidance_agent.model_id(),
         prompt_version=task.PROMPT_VERSION,
-    ))[0]["run_id"]
+    ))
+    if not created:
+        return {"error": "A run of this kind is already running for this resume and role"}
+    return created[0]["run_id"], resume_id, role_id
+
+
+def handler(event, context):
+    output_type = event.get("output_type", "smoke_test")
+    task = TASKS.get(output_type)
+    if task is None:
+        return {"error": f"Unknown output type: {output_type}"}
+
+    if event.get("run_id") is not None:
+        claimed = claim_run(int(event["run_id"]), output_type, task)
+    else:
+        claimed = start_run(int(event["resume_id"]), output_type, task)
+    if isinstance(claimed, dict):
+        print(json.dumps({"output_type": output_type, "error": claimed["error"]}))
+        return claimed
+    run_id, resume_id, role_id = claimed
 
     limit = None
     started = time.monotonic()
