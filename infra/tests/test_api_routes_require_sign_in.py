@@ -5,7 +5,7 @@ from stacks.kerjaready_stack import KerjaReadyStack
 
 
 def test_every_route_except_health_requires_sign_in():
-    app = cdk.App()
+    app = cdk.App(context={"aws:cdk:bundling-stacks": []})
     stack = KerjaReadyStack(
         app, "TestStack", env=cdk.Environment(account="123456789012", region="ap-southeast-5")
     )

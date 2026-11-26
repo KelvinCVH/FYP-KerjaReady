@@ -1,0 +1,108 @@
+"""The guidance agent's model and limits (KR-97): Strands on Claude Haiku in Amazon Bedrock.
+
+The model comes from GUIDANCE_MODEL_ID, set by the stack (GUIDANCE_MODEL in kerjaready_stack.py): Claude Haiku
+4.5 until AWS enables Claude Haiku 5.5 for this account. Claude is not served in-Region in ap-southeast-5, so calls go through the global cross-Region inference profile,
+which can process a request in any commercial AWS Region. The agent's tools must therefore return no resume text,
+file names or personal details: only skill names, match types, ratings, posting counts and job posting lines.
+"""
+
+import json
+import os
+from dataclasses import dataclass
+from typing import Callable
+
+from botocore.config import Config
+from strands import Agent
+from strands.hooks import AfterToolCallEvent, BeforeInvocationEvent, BeforeToolCallEvent, HookProvider, HookRegistry
+from strands.models import BedrockModel
+
+MAX_TOOL_CALLS = 10
+# After the first output, the model may correct a rejected output this many times before the run fails
+MAX_CORRECTIONS = 2
+MAX_TOKENS = 8000
+# One Bedrock call can wait for thinking and a long reply; the Lambda's own timeout bounds the whole run
+BEDROCK_CONFIG = Config(read_timeout=120, retries={"max_attempts": 3, "mode": "standard"})
+
+
+@dataclass
+class TaskRun:
+    """What one run of a task needs: the prompt, the output model, and a step that tidies the checked output."""
+
+    prompt: str
+    output_model: type
+    finish: Callable[[dict], dict] = lambda output: output
+
+
+class ToolCallLimit(HookProvider):
+    """Cancels every tool call after the first max_calls in one run. The model is told why, so it can finish.
+
+    Strands returns structured output through a tool named after the output model; that call is never counted
+    or cancelled, so a run that used all its tool calls can still return its output. When the output model's
+    checks reject an output, Strands sends the errors back to the model; this counts those corrections and keeps
+    the last errors for the run's record.
+    """
+
+    def __init__(self, output_tool, max_calls=MAX_TOOL_CALLS):
+        self.output_tool = output_tool
+        self.max_calls = max_calls
+        self.calls = 0
+        self.corrections = 0
+        self.last_rejection = None
+
+    def register_hooks(self, registry: HookRegistry, **kwargs) -> None:
+        registry.add_callback(BeforeInvocationEvent, self.reset)
+        registry.add_callback(BeforeToolCallEvent, self.count)
+        registry.add_callback(AfterToolCallEvent, self.record_rejection)
+
+    def reset(self, event: BeforeInvocationEvent) -> None:
+        self.calls = 0
+        self.corrections = 0
+        self.last_rejection = None
+
+    def count(self, event: BeforeToolCallEvent) -> None:
+        if event.tool_use["name"] == self.output_tool:
+            return
+        self.calls += 1
+        if self.calls > self.max_calls:
+            event.cancel_tool = (
+                f"Tool call limit reached: a run may make at most {self.max_calls} tool calls. "
+                "Finish with the information you already have."
+            )
+
+    def record_rejection(self, event: AfterToolCallEvent) -> None:
+        if event.tool_use["name"] == self.output_tool and event.result.get("status") == "error":
+            self.corrections += 1
+            self.last_rejection = " ".join(block.get("text", "") for block in event.result.get("content", []))
+            # The checks' messages name fields and rules, never the model's text
+            print(json.dumps({"output_rejected": self.corrections, "errors": self.last_rejection}))
+
+
+def model_id():
+    """The global inference profile the stack chose, such as global.anthropic.claude-haiku-4-5-20251001-v1:0."""
+    return os.environ["GUIDANCE_MODEL_ID"]
+
+
+def build_agent(system_prompt, tools, limit):
+    model = BedrockModel(
+        model_id=model_id(),
+        region_name=os.environ.get("AWS_REGION", "ap-southeast-5"),
+        max_tokens=MAX_TOKENS,
+        # Converse rather than ConverseStream: the run is in the background, and the role needs only
+        # bedrock:InvokeModel
+        streaming=False,
+        boto_client_config=BEDROCK_CONFIG,
+    )
+    # No callback handler: the default one prints the model's text to the logs
+    return Agent(model=model, system_prompt=system_prompt, tools=tools, hooks=[limit], callback_handler=None)
+
+
+def run_agent(agent, prompt, output_model, limit):
+    """Returns (the output as a dict, input tokens, output tokens). Raises when no valid output comes back."""
+    result = agent(prompt, structured_output_model=output_model,
+                   limits={"structured_output_attempts": MAX_CORRECTIONS + 1})
+    if result.structured_output is None:
+        if result.stop_reason == "limit_structured_output_attempts":
+            raise ValueError(f"The output failed its checks {limit.corrections} times. {limit.last_rejection}")
+        raise ValueError("The agent returned no structured output")
+    usage = result.metrics.accumulated_usage
+    return result.structured_output.model_dump(), usage.get("inputTokens"), usage.get("outputTokens")
