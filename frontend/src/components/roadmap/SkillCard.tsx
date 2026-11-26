@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import type { SkillMilestone } from "@/lib/roadmapApi";
 import { postingPercent } from "@/lib/roadmapText";
-import LetterTile from "./LetterTile";
+import SkillTile from "./SkillTile";
 import { minorHeading } from "./styles";
 
 type SkillCardProps = {
@@ -17,8 +17,8 @@ type SkillCardProps = {
   onToggle: () => void;
 };
 
-// One skill to build. Selected, it has a dark border and tile and its button reads Hide Details, so the state
-// doesn't rely on colour alone. The footer leaves room for KR-99's Mark as Done above the button.
+// One skill to build. Selected, it has a dark border (and a dark letter tile) and its button reads Hide Details, so
+// the state doesn't rely on colour alone. The footer leaves room for KR-99's Mark as Done above the button.
 export default function SkillCard({ milestone, step, selected, panelId, buttonId, onToggle }: SkillCardProps) {
   const { skill, postings } = milestone;
   const percent = postingPercent(postings, milestone.role_postings);
@@ -32,7 +32,7 @@ export default function SkillCard({ milestone, step, selected, panelId, buttonId
       )}
     >
       <div className="flex items-start gap-3">
-        <LetterTile skill={skill} selected={selected} />
+        <SkillTile skill={skill} selected={selected} />
         <div className="min-w-0">
           <h3 className="text-base font-semibold break-words">
             <span className="sr-only">Step {step}: </span>

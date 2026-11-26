@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { SkillMilestone } from "@/lib/roadmapApi";
 import { searchLinks } from "@/lib/roadmapText";
 import HighlightedLine from "./HighlightedLine";
-import LetterTile from "./LetterTile";
+import SkillTile from "./SkillTile";
 import { minorHeading } from "./styles";
 
 type SkillDetailsPanelProps = {
@@ -42,7 +42,7 @@ export default function SkillDetailsPanel({ id, milestone, step, total, onClose 
       className="rounded-xl border-2 border-zinc-700 bg-card p-5 break-words sm:p-6"
     >
       <div className="flex items-start gap-3">
-        <LetterTile skill={skill} selected />
+        <SkillTile skill={skill} selected />
         <div className="min-w-0 flex-1">
           <h3 id={headingId} className="text-lg font-semibold break-words">
             {skill}: How to Learn and Show It
