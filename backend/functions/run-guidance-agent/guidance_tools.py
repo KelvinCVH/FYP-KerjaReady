@@ -10,43 +10,9 @@ posting counts, the stored skill explanations and job posting lines.
 import json
 
 from kerjaready_shared.data_api import run_query
+from kerjaready_shared.rubric import RUBRIC
 from strands import tool
 
-# Rubric v1.0 as candidates see it (frontend/src/lib/rubric.ts): names, level labels and what the next level needs,
-# never the codes. The next-level text is fixed rubric wording, so the agent never has to invent the rubric.
-RUBRIC = [
-    ("a1_rating", "Work Evidence", "Do the entries say what was built or done, and with which technologies?",
-     ["Not shown", "Limited", "Clear", "Strong"],
-     ["At least one job, internship or project that says what you built or did and which technologies you used.",
-      "More than half of your entries name the specific thing you built or did (a system, feature, report or "
-      "script) and the tools you used.",
-      "A link to the work itself in at least one entry: a code repository, live demo or portfolio site. A GitHub "
-      "profile link alone doesn't count.",
-      None]),
-    ("a2_rating", "Outcome", "Does the resume say what the work achieved?",
-     ["Not shown", "Limited", "Clear", "Strong"],
-     ["At least one entry that says what the work achieved: something became faster, more accurate or automated, "
-      "or users or a client adopted it.",
-      "A concrete result in more than half of your entries. \"Built a dashboard\" is a task; \"The sales team now "
-      "uses the dashboard for weekly reviews\" is a result.",
-      "At least one result measured with a number, such as \"cut the report time from 6 hours to 2\". Team size or "
-      "the number of reports doesn't count.",
-      None]),
-    ("a3_rating", "Skill in Use", "Are skills shown being used, not just listed?",
-     ["Not shown", "Limited", "Clear", "Strong"],
-     ["Tools mentioned inside your entry descriptions, not only in the skills list.",
-      "More than half of your entries say what a tool was used for, such as \"Used Python to automate the monthly "
-      "report\".",
-      "Nearly all entries give each tool its own job: \"Built the interface with React and the API with Spring "
-      "Boot\", not \"using Java, Spring and Hibernate\".",
-      None]),
-    ("b2_rating", "Language Quality", "Is the writing free of spelling and grammar errors?",
-     ["Hard to read", "Several errors", "Minor errors", "No errors found"],
-     [None,
-      "No more than two spelling, grammar or product-name errors. The Resume page lists the errors found.",
-      "No spelling, grammar or product-name errors. The Resume page lists the errors found.",
-      None]),
-]
 # The roadmap covers six skills, so one call can look them all up
 MAX_CONTEXT_SKILLS = 6
 MATCH_TYPES = {"lexical": "named in the resume", "implied": "shown through a related tool", "semantic": "similar wording"}
