@@ -645,6 +645,23 @@ class KerjaReadyStack(Stack):
             ),
         )
 
+        # Candidate: mark a roadmap skill done (PUT), or undo it (DELETE) (KR-99)
+        set_skill_done_function = self._create_python_function(
+            "SetSkillDoneFunction",
+            "set-skill-done",
+            timeout=Duration.seconds(29),
+            environment=data_api_environment,
+            layers=[shared_layer],
+        )
+        self.cluster.grant_data_api_access(set_skill_done_function)
+        self.http_api.add_routes(
+            path="/candidate/done-skills/{skill_id}",
+            methods=[apigwv2.HttpMethod.PUT, apigwv2.HttpMethod.DELETE],
+            integration=apigwv2_integrations.HttpLambdaIntegration(
+                "SetSkillDoneIntegration", set_skill_done_function
+            ),
+        )
+
         # Lambda: Apply SQL migrations through the Data API
         run_database_migration_function = self._create_python_function(
             "RunDatabaseMigrationFunction",

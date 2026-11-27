@@ -40,6 +40,10 @@ export type PracticeProject = { title: string; description: string; deliverable:
 // Every text field is written by AI: show it as plain text only, and never log it.
 export type SkillMilestone = {
   skill: string;
+  // null when the skill is no longer in the role profile; it can't be marked done then
+  skill_id: number | null;
+  // Whether the candidate has marked this skill done (KR-99). Kept per skill, so it carries over to new roadmaps.
+  done: boolean;
   postings: number;
   role_postings: number;
   why_it_matters: string | null;
@@ -86,4 +90,16 @@ export function getRoadmap() {
 export async function startRoadmap() {
   const { run } = await apiSend<{ run: RoadmapRun }>("POST", "/candidate/roadmap");
   return run;
+}
+
+export type SkillDoneResponse = { skill_id: number; done: boolean };
+
+// Marks a skill done for the candidate. Idempotent.
+export function markSkillDone(skillId: number) {
+  return apiSend<SkillDoneResponse>("PUT", `/candidate/done-skills/${skillId}`);
+}
+
+// Undoes a done mark. Idempotent.
+export function unmarkSkillDone(skillId: number) {
+  return apiSend<SkillDoneResponse>("DELETE", `/candidate/done-skills/${skillId}`);
 }

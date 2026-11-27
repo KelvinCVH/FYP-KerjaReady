@@ -1,11 +1,19 @@
 import { useEffect, useId, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import FormAlert from "@/components/auth/FormAlert";
 import { profileCard } from "@/components/profile/styles";
 import { Button } from "@/components/ui/button";
 import { scrollBehaviour, useSnapCarousel, type CarouselView } from "@/hooks/useSnapCarousel";
 import type { SkillMilestone } from "@/lib/roadmapApi";
+import DoneSkillsBanner from "./DoneSkillsBanner";
 import SkillCarousel from "./SkillCarousel";
 import SkillDetailsPanel from "./SkillDetailsPanel";
+
+type BuildSkillsSectionProps = {
+  milestones: SkillMilestone[];
+  // Saves a done mark (useRoadmap's setSkillDone): resolves to the message to show when it fails, otherwise null
+  onSetDone: (milestone: SkillMilestone, done: boolean) => Promise<string | null>;
+};
 
 // The panel counts as on screen while its top is above this distance from the bottom of the window
 const PANEL_VISIBLE_PX = 96;
@@ -15,9 +23,10 @@ function counterText({ first, last }: CarouselView, total: number) {
   return first === last ? `Skill ${first} of ${total}` : `Skills ${first}–${last} of ${total}`;
 }
 
-// The skills not evidenced in the resume, in demand order, with the details of the one selected below them.
-// The page keys it by run, so a new roadmap starts with no skill selected and the carousel at the start.
-export default function BuildSkillsSection({ milestones }: { milestones: SkillMilestone[] }) {
+// The skills not evidenced in the resume, in demand order, with the details of the one selected below them. Above the
+// carousel: a failed done-mark save, then the reminder for skills marked done (KR-99).
+// The page keys it by run, so a new roadmap starts with no skill selected, no save error and the carousel at the start.
+export default function BuildSkillsSection({ milestones, onSetDone }: BuildSkillsSectionProps) {
   const baseId = useId();
   const headingId = `${baseId}-heading`;
   const scrollerId = `${baseId}-skills`;
@@ -29,6 +38,11 @@ export default function BuildSkillsSection({ milestones }: { milestones: SkillMi
   const { view } = carousel;
   // One card at most is selected, and none at first
   const [selected, setSelected] = useState<number | null>(null);
+  // Why the last done mark couldn't be saved; cleared by the next one
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const doneNames = milestones
+    .filter((milestone) => milestone.skill_id !== null && milestone.done)
+    .map((milestone) => milestone.skill);
 
   // Focus stays on the card's button (a disclosure). The panel is brought into view only when it is off screen.
   useEffect(() => {
@@ -42,6 +56,14 @@ export default function BuildSkillsSection({ milestones }: { milestones: SkillMi
 
   function toggle(index: number) {
     setSelected((current) => (current === index ? null : index));
+  }
+
+  // Focus stays on the button; the change shows straight away and goes back if it can't be saved
+  async function toggleDone(index: number) {
+    const milestone = milestones[index];
+    setSaveError(null);
+    const error = await onSetDone(milestone, !milestone.done);
+    if (error) setSaveError(error);
   }
 
   // Close returns focus to the button that opened the panel
@@ -112,6 +134,14 @@ export default function BuildSkillsSection({ milestones }: { milestones: SkillMi
         </div>
       ) : (
         <>
+          {saveError && (
+            <div className="mt-5">
+              <FormAlert message={saveError} />
+            </div>
+          )}
+          <div className={doneNames.length > 0 ? "mt-5" : undefined}>
+            <DoneSkillsBanner names={doneNames} />
+          </div>
           <div className="mt-5">
             <SkillCarousel
               id={scrollerId}
@@ -121,6 +151,7 @@ export default function BuildSkillsSection({ milestones }: { milestones: SkillMi
               panelId={panelId}
               buttonId={buttonId}
               onToggle={toggle}
+              onToggleDone={(index) => void toggleDone(index)}
             />
           </div>
           {current && selected !== null && (

@@ -112,17 +112,6 @@ CREATE TABLE IF NOT EXISTS recommendations(
 COMMENT ON TABLE recommendations IS 'Resume improvement recommendations for an assessment';
 CREATE INDEX IF NOT EXISTS recommendations_assessment_id_index ON recommendations (assessment_id);
 
--- roadmap_steps: Ordered learning roadmap for skills not evidenced in the resume
-CREATE TABLE IF NOT EXISTS roadmap_steps(
-    assessment_id bigint NOT NULL REFERENCES assessments (assessment_id) ON DELETE CASCADE,
-    skill_id bigint NOT NULL REFERENCES skills (skill_id),
-    step_order smallint NOT NULL CHECK (step_order > 0),
-    guidance_text text NOT NULL,
-    PRIMARY KEY (assessment_id, skill_id),
-    UNIQUE (assessment_id, step_order)
-);
-COMMENT ON TABLE roadmap_steps IS 'Ordered learning roadmap for skills not evidenced in the resume';
-
 --------------------------
 --- RECRUITMENT
 --------------------------

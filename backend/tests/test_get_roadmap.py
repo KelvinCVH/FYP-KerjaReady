@@ -12,13 +12,17 @@ CONTEXT_ROW = {"role_id": 4, "title": "AI/ML Engineer", "posting_count": 52,
 RUN_ROW = {"run_id": 200, "status": "done", "created_at": "2026-11-26T01:10:00Z",
            "finished_at": "2026-11-26T01:10:22Z"}
 RATINGS_ROW = {"a1_rating": 2, "a2_rating": 1, "a3_rating": 2, "b2_rating": 3}
-# 14/52 = 0.2692, 8/52 = 0.1538, 7/52 = 0.1346
+# 14/52 = 0.2692, 8/52 = 0.1538, 7/52 = 0.1346. done comes from the done_skills join (KR-99).
 PROFILE_ROWS = [
-    {"name": "TensorFlow", "demand_share": 0.2692, "why_it_matters": "Postings ask for TensorFlow to train models."},
-    {"name": "Microsoft Azure", "demand_share": 0.1538, "why_it_matters": None},
-    {"name": "Computer vision", "demand_share": 0.1346, "why_it_matters": "Postings ask for computer vision."},
-    {"name": "Data analysis", "demand_share": 0.1346, "why_it_matters": "Postings ask for data analysis."},
-    {"name": "Data science", "demand_share": 0.1346, "why_it_matters": "Postings ask for data science."},
+    {"skill_id": 101, "name": "TensorFlow", "demand_share": 0.2692,
+     "why_it_matters": "Postings ask for TensorFlow to train models.", "done": True},
+    {"skill_id": 102, "name": "Microsoft Azure", "demand_share": 0.1538, "why_it_matters": None, "done": False},
+    {"skill_id": 104, "name": "Computer vision", "demand_share": 0.1346,
+     "why_it_matters": "Postings ask for computer vision.", "done": True},
+    {"skill_id": 105, "name": "Data analysis", "demand_share": 0.1346,
+     "why_it_matters": "Postings ask for data analysis.", "done": False},
+    {"skill_id": 106, "name": "Data science", "demand_share": 0.1346,
+     "why_it_matters": "Postings ask for data science.", "done": False},
 ]
 
 
@@ -128,6 +132,43 @@ def test_a_skill_no_longer_in_the_role_profile_shows_no_postings(monkeypatch):
     _, body = call(monkeypatch, database_with(profile=PROFILE_ROWS[1:]))
     tensorflow = body["roadmap"]["skill_milestones"][0]
     assert tensorflow["postings"] == 0 and tensorflow["why_it_matters"] is None
+
+
+def test_milestones_get_their_skill_id_and_whether_the_candidate_marked_them_done(monkeypatch):
+    _, body = call(monkeypatch, database_with())
+    marks = {m["skill"]: (m["skill_id"], m["done"]) for m in body["roadmap"]["skill_milestones"]}
+
+    assert marks == {
+        "TensorFlow": (101, True),
+        "Microsoft Azure": (102, False),
+        "Computer vision": (104, True),
+        "Data science": (106, False),
+        "Data analysis": (105, False),
+    }
+
+
+def test_a_skill_no_longer_in_the_role_profile_has_no_skill_id_and_is_not_done(monkeypatch):
+    _, body = call(monkeypatch, database_with(profile=PROFILE_ROWS[1:]))
+    tensorflow = body["roadmap"]["skill_milestones"][0]
+    assert tensorflow["skill"] == "TensorFlow"
+    assert tensorflow["skill_id"] is None and tensorflow["done"] is False
+
+
+def test_a_candidate_with_no_done_skills_has_none_done(monkeypatch):
+    profile = [{**row, "done": False} for row in PROFILE_ROWS]
+    _, body = call(monkeypatch, database_with(profile=profile))
+    assert [m["done"] for m in body["roadmap"]["skill_milestones"]] == [False] * 5
+
+
+def test_done_marks_come_from_the_role_skills_query_for_this_candidate(monkeypatch):
+    database = database_with()
+    call(monkeypatch, database)
+    role_skills = [(sql, params) for sql, params in database.queries if "FROM role_skills" in sql]
+
+    assert len(role_skills) == 1
+    sql, params = role_skills[0]
+    assert "LEFT JOIN done_skills ds" in sql and "ds.candidate_id = CAST(:user_id AS uuid)" in sql
+    assert params == {"role_id": 4, "user_id": USER_ID}
 
 
 @pytest.mark.parametrize("status", ["running", "failed"])

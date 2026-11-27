@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { ApiError, getApiErrorMessage } from "@/lib/apiClient";
-import { getRoadmap, startRoadmap, type RoadmapResponse } from "@/lib/roadmapApi";
+import {
+  getRoadmap,
+  markSkillDone,
+  startRoadmap,
+  unmarkSkillDone,
+  type RoadmapResponse,
+  type SkillMilestone,
+} from "@/lib/roadmapApi";
 
 const POLL_MS = 3000;
 // A backup for a run that never finishes. The API already reports a run that has been running for over 6 minutes as
@@ -26,6 +33,20 @@ function isPermanent(error: unknown) {
   return error instanceof ApiError && error.status >= 400 && error.status < 500;
 }
 
+function saveFailed(skill: string) {
+  return `We couldn’t save your change to ${skill}. Check your connection, then try again.`;
+}
+
+// The loaded roadmap with one skill's done mark set. Unchanged when no roadmap is shown, such as during Regenerate.
+function withSkillDone(load: RoadmapLoad, skillId: number, done: boolean): RoadmapLoad {
+  if (load.status !== "ready" || !load.data.roadmap) return load;
+  const { roadmap } = load.data;
+  const skill_milestones = roadmap.skill_milestones.map((milestone) =>
+    milestone.skill_id === skillId ? { ...milestone, done } : milestone,
+  );
+  return { status: "ready", data: { ...load.data, roadmap: { ...roadmap, skill_milestones } } };
+}
+
 function getPhase(data: RoadmapResponse, timedOutRunId: number | null, startError: StartError | null): RoadmapPhase {
   if (!data.resume) return "no-resume";
   if (!data.target_role) return "no-role";
@@ -38,7 +59,8 @@ function getPhase(data: RoadmapResponse, timedOutRunId: number | null, startErro
 }
 
 // The candidate's learning roadmap (KR-98). Loads it once, starts the first run on its own when there has never been
-// one, and checks a running run every 3 seconds until it is done or failed. start() is Try Again and Regenerate.
+// one, and checks a running run every 3 seconds until it is done or failed. start() is Try Again and Regenerate, and
+// setSkillDone() is Mark as Done (KR-99).
 export function useRoadmap() {
   const [load, setLoad] = useState<RoadmapLoad>({ status: "loading" });
   // Bumped by reload() to load again with the loading state
@@ -52,6 +74,8 @@ export function useRoadmap() {
   // Set once the first run has been started on its own. A ref, so StrictMode's second effect run doesn't send a
   // second POST.
   const autoStartedRef = useRef(false);
+  // Skill ids with a done-mark request in flight, so more clicks on that skill are ignored until it finishes
+  const savingRef = useRef(new Set<number>());
 
   useEffect(() => {
     // A newer load clears this, so a slower earlier answer can't overwrite a newer one
@@ -146,6 +170,26 @@ export function useRoadmap() {
     }
   }
 
+  // Marks a skill done, or undoes it, on the page straight away, then saves it (KR-99). If the save fails the mark goes
+  // back and this returns the message to show; otherwise null, as it is for a click ignored while a save is in flight.
+  // The roadmap is never loaded again for this.
+  async function setSkillDone(milestone: SkillMilestone, done: boolean): Promise<string | null> {
+    const skillId = milestone.skill_id;
+    if (skillId === null || savingRef.current.has(skillId)) return null;
+    savingRef.current.add(skillId);
+    setLoad((current) => withSkillDone(current, skillId, done));
+    try {
+      await (done ? markSkillDone(skillId) : unmarkSkillDone(skillId));
+      return null;
+    } catch (error) {
+      setLoad((current) => withSkillDone(current, skillId, !done));
+      // A 503 means the database is waking up, which the API's own message says
+      return error instanceof ApiError && error.status === 503 ? getApiErrorMessage(error) : saveFailed(milestone.skill);
+    } finally {
+      savingRef.current.delete(skillId);
+    }
+  }
+
   // The first visit for this resume and role: start writing straight away
   const needsFirstRun = data !== null && data.resume !== null && data.target_role !== null && data.run === null;
   const startFirstRun = useEffectEvent(() => {
@@ -158,5 +202,5 @@ export function useRoadmap() {
     startFirstRun();
   }, [needsFirstRun]);
 
-  return { load, data, phase, start, starting, startError, reload };
+  return { load, data, phase, start, starting, startError, reload, setSkillDone };
 }
