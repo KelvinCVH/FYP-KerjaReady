@@ -13,8 +13,9 @@ The saved output is the agent's own (roadmap_task.py). This route adds what come
 loads, so it never has to come from the model:
 - each resume step: level, level_label and next_label from the resume's ratings and the rubric
 - each skill milestone: postings and role_postings (how many of the role's postings ask for the skill), why_it_matters
-  (the stored KR-100 explanation, as on the Skill Gap page, or null) and learn_after (the other milestones its
-  learning_order names, as one phrase, or null)
+  (the stored KR-100 explanation, as on the Skill Gap page, or null), learn_after (the other milestones its
+  learning_order names, as one phrase, or null), skill_id (null when the skill has left the role profile) and done
+  (whether the candidate has marked the skill done, KR-99; false when skill_id is null)
 """
 
 import json
@@ -31,10 +32,14 @@ SELECT a1_rating, a2_rating, a3_rating, b2_rating
 FROM resume_ratings
 WHERE resume_id = :resume_id
 """
+# The role profile, with whether the candidate has marked each skill done (KR-99). Done marks belong to the candidate
+# and the skill, so they carry over from earlier roadmaps.
 ROLE_SKILLS = """
-SELECT s.name, CAST(rq.demand_share AS double precision) AS demand_share, rq.why_it_matters
+SELECT s.skill_id, s.name, CAST(rq.demand_share AS double precision) AS demand_share, rq.why_it_matters,
+       ds.skill_id IS NOT NULL AS done
 FROM role_skills rq
 JOIN skills s ON s.skill_id = rq.skill_id
+LEFT JOIN done_skills ds ON ds.skill_id = rq.skill_id AND ds.candidate_id = CAST(:user_id AS uuid)
 WHERE rq.role_id = :role_id
 """
 TOP_LEVEL = 3
@@ -67,8 +72,9 @@ def resume_steps(steps, resume_id):
     return result
 
 
-def skill_milestones(milestones, role):
-    rows = run_query(ROLE_SKILLS, [{"name": "role_id", "value": {"longValue": role["role_id"]}}])
+def skill_milestones(milestones, role, user_id):
+    rows = run_query(ROLE_SKILLS, [{"name": "role_id", "value": {"longValue": role["role_id"]}},
+                                   roadmap_runs.user_parameter(user_id)])
     profile = {row["name"].casefold(): row for row in rows}
     names = [milestone["skill"] for milestone in milestones]
     result = []
@@ -83,6 +89,8 @@ def skill_milestones(milestones, role):
             "role_postings": role["posting_count"],
             "why_it_matters": found.get("why_it_matters") if found else None,
             "learn_after": joined(earlier),
+            "skill_id": found["skill_id"] if found else None,
+            "done": bool(found["done"]) if found else False,
         })
     return result
 
@@ -102,6 +110,6 @@ def handler(event, user):
         output = json.loads(row["output"])
         result["roadmap"] = {
             "resume_steps": resume_steps(output.get("resume_steps", []), resume["resume_id"]),
-            "skill_milestones": skill_milestones(output.get("skill_milestones", []), role),
+            "skill_milestones": skill_milestones(output.get("skill_milestones", []), role, user["user_id"]),
         }
     return 200, result
