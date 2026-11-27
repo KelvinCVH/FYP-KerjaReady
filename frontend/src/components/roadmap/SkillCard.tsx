@@ -20,8 +20,8 @@ type SkillCardProps = {
 };
 
 // One skill to build. Selected, it has a dark border (and a dark letter tile) and its button reads Hide Details, so
-// the state doesn't rely on colour alone. Done, its Mark as Done button reads Done, with an emerald border and
-// aria-pressed. A skill no longer in the role profile has no skill_id, so it can't be marked and has no button.
+// the state doesn't rely on colour alone. Done, its Mark as Done button reads Done, filled emerald (the primary
+// button), with aria-pressed. A skill no longer in the role profile has no skill_id, so it can't be marked and has no button.
 export default function SkillCard({
   milestone,
   step,
@@ -83,8 +83,8 @@ export default function SkillCard({
       <div className="mt-auto flex flex-col gap-2 pt-5">
         {milestone.skill_id !== null && (
           <Button
-            variant="outline"
-            className={cn("w-full", done && "border-2 border-primary text-primary")}
+            variant={done ? "default" : "outline"}
+            className="w-full"
             aria-pressed={done}
             onClick={onToggleDone}
           >
