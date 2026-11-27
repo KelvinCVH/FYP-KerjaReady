@@ -36,7 +36,7 @@ function failureMessage(httpStatus: number, message: string) {
 export default function RoadmapPage() {
   usePageTitle("Learning Roadmap | KerjaReady");
 
-  const { load, data, phase, start, starting, startError, reload } = useRoadmap();
+  const { load, data, phase, start, starting, startError, reload, setSkillDone } = useRoadmap();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const writingRef = useRef<HTMLHeadingElement>(null);
   const failedRef = useRef<HTMLHeadingElement>(null);
@@ -165,9 +165,16 @@ export default function RoadmapPage() {
       );
     }
 
+    // Skills done, out of this roadmap's skills that can be marked (a skill no longer in the role profile can't be)
+    const markable = roadmap.skill_milestones.filter((milestone) => milestone.skill_id !== null);
+    const progress =
+      markable.length > 0
+        ? { done: markable.filter((milestone) => milestone.done).length, total: markable.length }
+        : undefined;
+
     return (
       <>
-        <RoadmapContextCard role={role} resume={resume} showChangeLink />
+        <RoadmapContextCard role={role} resume={resume} showChangeLink progress={progress} />
         <p className="mt-6 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
           <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {AI_NOTE}
@@ -178,7 +185,7 @@ export default function RoadmapPage() {
           </div>
         )}
         <div className="mt-10">
-          <BuildSkillsSection key={run.run_id} milestones={roadmap.skill_milestones} />
+          <BuildSkillsSection key={run.run_id} milestones={roadmap.skill_milestones} onSetDone={setSkillDone} />
         </div>
       </>
     );

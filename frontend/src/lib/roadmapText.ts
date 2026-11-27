@@ -48,3 +48,18 @@ export function searchLinks(term: string): SearchLink[] {
 export function postingPercent(postings: number, rolePostings: number) {
   return rolePostings > 0 ? Math.round((postings / rolePostings) * 100) : 0;
 }
+
+// ["A"] → "A", ["A", "B"] → "A and B", ["A", "B", "C"] → "A, B and C"
+export function joinNames(names: string[]) {
+  if (names.length < 2) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+// The reminder above the skills once at least one is done, with the names in roadmap order
+export function doneBannerText(names: string[]) {
+  const one = names.length === 1;
+  return (
+    `${joinNames(names)} ${one ? "is" : "are"} done. Include ${one ? "it" : "them"} in your resume now. ` +
+    "When you are ready, upload your updated resume to see your new skill gap and learning roadmap."
+  );
+}

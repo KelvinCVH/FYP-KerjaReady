@@ -13,6 +13,7 @@ type SkillCarouselProps = {
   panelId: string;
   buttonId: (index: number) => string;
   onToggle: (index: number) => void;
+  onToggleDone: (index: number) => void;
 };
 
 // The skills in demand order on a numbered timeline, in a scroll-snap row: 3 cards across on a wide page, 1 and a
@@ -29,6 +30,7 @@ export default function SkillCarousel({
   panelId,
   buttonId,
   onToggle,
+  onToggleDone,
 }: SkillCarouselProps) {
   const { scrollerRef, scrollerProps, dragging, view } = carousel;
   const scrollable = !(view.atStart && view.atEnd);
@@ -59,7 +61,7 @@ export default function SkillCarousel({
               {index < last && (
                 <span className="absolute top-1/2 -right-2 left-1/2 h-0.5 -translate-y-1/2 bg-zinc-300" />
               )}
-              <StepMarker step={index + 1} />
+              <StepMarker step={index + 1} done={milestone.done} />
             </div>
             <SkillCard
               milestone={milestone}
@@ -68,6 +70,7 @@ export default function SkillCarousel({
               panelId={panelId}
               buttonId={buttonId(index)}
               onToggle={() => onToggle(index)}
+              onToggleDone={() => onToggleDone(index)}
             />
           </li>
         ))}

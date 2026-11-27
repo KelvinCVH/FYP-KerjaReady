@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import type { SkillMilestone } from "@/lib/roadmapApi";
@@ -15,12 +15,23 @@ type SkillCardProps = {
   panelId: string;
   buttonId: string;
   onToggle: () => void;
+  // Marks the skill done, or undoes it (KR-99)
+  onToggleDone: () => void;
 };
 
 // One skill to build. Selected, it has a dark border (and a dark letter tile) and its button reads Hide Details, so
-// the state doesn't rely on colour alone. The footer leaves room for KR-99's Mark as Done above the button.
-export default function SkillCard({ milestone, step, selected, panelId, buttonId, onToggle }: SkillCardProps) {
-  const { skill, postings } = milestone;
+// the state doesn't rely on colour alone. Done, its Mark as Done button reads Done, with an emerald border and
+// aria-pressed. A skill no longer in the role profile has no skill_id, so it can't be marked and has no button.
+export default function SkillCard({
+  milestone,
+  step,
+  selected,
+  panelId,
+  buttonId,
+  onToggle,
+  onToggleDone,
+}: SkillCardProps) {
+  const { skill, postings, done } = milestone;
   const percent = postingPercent(postings, milestone.role_postings);
 
   return (
@@ -70,6 +81,20 @@ export default function SkillCard({ milestone, step, selected, panelId, buttonId
       )}
 
       <div className="mt-auto flex flex-col gap-2 pt-5">
+        {milestone.skill_id !== null && (
+          <Button
+            variant="outline"
+            className={cn("w-full", done && "border-2 border-primary text-primary")}
+            aria-pressed={done}
+            onClick={onToggleDone}
+          >
+            <Check aria-hidden="true" className="size-4" />
+            <span>
+              {done ? "Done" : "Mark as Done"}
+              <span className="sr-only"> for {skill}</span>
+            </span>
+          </Button>
+        )}
         <Button
           id={buttonId}
           variant="outline"
